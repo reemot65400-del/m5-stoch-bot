@@ -1,0 +1,49 @@
+name: M5 Stochastic Sniper Bot
+
+on:
+  schedule:
+    # يعمل كل 5 دقائق
+    - cron: '*/5 * * * *'
+  workflow_dispatch: 
+
+jobs:
+  run-m5-sniper:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests numpy pandas yfinance
+
+      - name: Restore previous state artifact
+        id: restore-state
+        uses: actions/cache@v4
+        with:
+          path: ./state_m5_omega.json  
+          key: m5-sniper-state-${{ github.run_id }}
+          restore-keys: |
+            m5-sniper-state-
+
+      - name: Run M5 Sniper Script
+        env:
+          TG_TOKEN: ${{ secrets.TG_TOKEN }}
+          TG_CHAT: ${{ secrets.TG_CHAT }}
+        run: python m5_bot.py 
+
+      - name: Upload current state artifact
+        if: always() 
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-sniper-state-current
+          path: ./state_m5_omega.json   
+          retention-days: 1
