@@ -13,10 +13,10 @@ SYMBOLS = [
     "AUDUSD=X", "NZDUSD=X"
 ]
 TIMEFRAME = "15m"
-PERIOD_LIMIT = "60d" # الحد الأقصى للبيانات الداخلية المجانية
-BREAK_EVEN_WR = 0.5263 # نقطة التعادل لعائد 90%
+PERIOD_LIMIT = "60d" 
+BREAK_EVEN_WR = 0.5263 
 
-# معاملات الاستراتيجية
+# Strategy Parameters
 BB_PERIOD = 15
 BB_STD_DEV = 2.3
 EMA_TREND_PERIOD = 200
@@ -50,7 +50,7 @@ def get_data(symbol, period=PERIOD_LIMIT, interval=TIMEFRAME):
         return None
 
 def calculate_indicators(df):
-    """حساب البولنجر باندز والـ EMA بدقة عالية"""
+    """Calculates BB(15, 2.3) and EMA(200) with Population Std Dev."""
     c = df['Close']
     
     # 1. Bollinger Bands (Population Std Dev ddof=0 is critical)
@@ -69,18 +69,18 @@ def calculate_indicators(df):
     )
 
 def run_backtest(df):
-    """تنفيذ قواعد الدخول الصارمة وحساب النتائج"""
+    """Executes the strict entry rules and calculates Win Rate/Z-Score."""
     trades = []
     n = len(df)
     
-    # البدء بعد استقرار المؤشرات
+    # Start after indicators are stable
     start_idx = max(BB_PERIOD, EMA_TREND_PERIOD) + 1
     
     for i in range(start_idx, n - 1):
         curr_close = df['Close'].iloc[i]
         next_close = df['Close'].iloc[i+1]
         
-        # تخطي التساوي
+        # Skip ties
         if curr_close == next_close:
             continue
             
@@ -91,14 +91,10 @@ def run_backtest(df):
         direction = 0 # 0=None, 1=CALL, -1=PUT
         
         # --- BUY RULE (CALL) ---
-        # الشرط 1: السعر فوق EMA200 (اتجاه صاعد)
-        # الشرط 2: الإغلاق يلمس أو يخترق الباند السفلي
         if curr_close > ema_200 and curr_close <= bb_lower:
             direction = 1
             
         # --- SELL RULE (PUT) ---
-        # الشرط 1: السعر تحت EMA200 (اتجاه هابط)
-        # الشرط 2: الإغلاق يلمس أو يخترق الباند العلوي
         elif curr_close < ema_200 and curr_close >= bb_upper:
             direction = -1
             
@@ -114,7 +110,7 @@ def run_backtest(df):
     return trades
 
 def analyze_results(all_trades):
-    """حساب المقاييس الإحصائية"""
+    """Calculates statistical metrics."""
     total = len(all_trades)
     if total == 0:
         return {'count': 0, 'wr': 0, 'z_score': 0}
@@ -122,7 +118,7 @@ def analyze_results(all_trades):
     wins = sum(all_trades)
     wr = wins / total
     
-    # حساب Z-Score مقابل احتمالية التعادل
+    # Z-Score Calculation against Break-even Probability
     p_null = BREAK_EVEN_WR
     std_dev = np.sqrt(total * p_null * (1 - p_null))
     z_score = (wins - (total * p_null)) / std_dev if std_dev > 0 else 0
@@ -138,16 +134,18 @@ def main():
     global_trades = []
     
     for sym in SYMBOLS:
-        log(f"Processing {sym}...", end=" ")
+        # ★★ التصحيح هنا: إزالة end=" " لأن دالة log لا تدعمها ★★
+        log(f"Processing {sym}...") 
+        
         df = get_data(sym)
         if df is not None and len(df) > 250:
             enriched_df = calculate_indicators(df)
             trades = run_backtest(enriched_df)
             global_trades.extend(trades)
-            log(f"Done ({len(trades)} signals)")
+            log(f"   -> Done ({len(trades)} signals)")
         else:
-            log("Skipped (Insufficient Data)")
-        time.sleep(1) # تأخير بسيط لتجنب الحظر
+            log("   -> Skipped (Insufficient Data)")
+        time.sleep(1) 
             
     stats = analyze_results(global_trades)
     
@@ -159,7 +157,7 @@ def main():
     log(f"Z-Score (Significance):  {stats['z_score']:.2f}")
     
     verdict = "FAILING"
-    if stats['count'] >= 100: # حد أدنى لحجم العينة
+    if stats['count'] >= 100: 
         if stats['wr'] >= 0.58 and stats['z_score'] > 2.0:
             verdict = "EXCELLENT 🏆"
         elif stats['wr'] >= BREAK_EVEN_WR and stats['z_score'] > 1.0:
