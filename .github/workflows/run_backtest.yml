@@ -1,12 +1,12 @@
-name: Run Sniper Backtest Lab
+name: Run Stochastic v9.9 Backtest
 
 on:
-  workflow_dispatch: # يسمح بالتشغيل اليدوي فقط عبر زر Run workflow
+  workflow_dispatch: # يسمح بالتشغيل اليدوي فقط
 
 jobs:
-  run-backtest:
+  run-stoch-backtest:
     runs-on: ubuntu-latest
-    timeout-minutes: 20 # إعطاء وقت كافٍ (20 دقيقة) لإنهاء الاختبار
+    timeout-minutes: 25 # وقت كافٍ لفحص كل شموع الـ 50 يوماً بدقة
     
     steps:
       - name: Checkout repository
@@ -20,15 +20,15 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # تثبيت المكتبات الأساسية فقط (بدون pandas_ta لتجنب الأخطاء)
+          # تثبيت المكتبات الأساسية فقط (بدون pandas_ta)
           pip install yfinance pandas numpy
 
-      - name: Execute Backtest Script
-        run: python backtest_sniper_lab.py
+      - name: Execute Stochastic Backtest Script
+        run: python backtest_stoch_v99.py
         
       - name: Upload Results Artifact
-        if: always() # يرفع الملف حتى لو فشل السكربت (لرؤية سجل الأخطاء)
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backtest-results
-          path: results.txt
+          name: stoch-v99-results
+          path: results_stoch_v99.txt
