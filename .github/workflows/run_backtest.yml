@@ -1,12 +1,12 @@
-name: Run BB M15 Backtest
+name: Run BB M15 Backtest (14 Pairs)
 
 on:
   workflow_dispatch:
 
 jobs:
-  run-bb-backtest:
+  run-bb-backtest-14:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20 # زيادة الوقت لاستيعاب 14 زوجاً
     
     steps:
       - name: Checkout repository
@@ -22,12 +22,12 @@ jobs:
           python -m pip install --upgrade pip
           pip install yfinance pandas numpy
 
-      - name: Execute BB Backtest Script
-        run: python backtest_bb_m15.py
+      - name: Execute BB Backtest Script (14 Pairs)
+        run: python backtest_bb_m15_14pairs.py
         
       - name: Upload Results Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: bb-m15-results
-          path: results_bb_m15.txt
+          name: bb-m15-14pairs-results
+          path: results_bb_m15_14pairs.txt
