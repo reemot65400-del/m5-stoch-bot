@@ -1,6 +1,6 @@
 import yfinance as yf
 import pandas as pd
-import pandas_ta as ta
+import numpy as np
 from datetime import datetime, timedelta
 import time
 
@@ -12,26 +12,44 @@ PAIRS = [
     "AUDUSD=X", "USDCAD=X", "NZDUSD=X", "EURGBP=X", "EURJPY=X"
 ]
 
-START_DATE = "2023-10-01"
-END_DATE = "2024-10-01"
+END_DATE = datetime.now().strftime("%Y-%m-%d")
+START_DATE = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
 
-# معاملات الاستراتيجية (يجب أن تطابق البوت الحي)
 EMA_TREND_LEN = 200
 EMA_ENTRY_LEN = 50
 RSI_LEN = 14
-TOUCH_THRESHOLD = 0.0015 # 0.15%
+TOUCH_THRESHOLD = 0.0015 
 
-# إعدادات المحاكاة
-TRADE_DURATION_CANDLES = 3 # 3 شموع M5 = 15 دقيقة
-SPREAD_PIPS = 2.0 # تكلفة السبريد الافتراضية لكل صفقة
+TRADE_DURATION_CANDLES = 3 
+SPREAD_PIPS = 2.0 
 INITIAL_BALANCE = 10000
-BET_SIZE = 100 # مبلغ ثابت لكل صفقة
+BET_SIZE = 100 
 
-print(f"🧪 Starting Backtest Lab: {START_DATE} to {END_DATE}")
-print(f"💰 Initial Balance: ${INITIAL_BALANCE} | Bet Size: ${BET_SIZE}")
+RESULT_FILE = "results.txt"
+
+def log(msg):
+    print(msg)
+    with open(RESULT_FILE, "a", encoding="utf-8") as f:
+        f.write(msg + "\n")
+
+log(f"🧪 Starting Backtest Lab (Pure Pandas Mode): {START_DATE} to {END_DATE}")
 
 # ═══════════════════════════════════════════════
-# 2. دوال المنطق (Logic Functions - Same as Bot)
+# 2. دوال حساب المؤشرات يدوياً (بدون pandas_ta)
+# ═══════════════════════════════════════════════
+
+def calculate_ema(series, period):
+    return series.ewm(span=period, adjust=False).mean()
+
+def calculate_rsi(series, period):
+    delta = series.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=period).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=period).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
+
+# ═══════════════════════════════════════════════
+# 3. دوال المنطق (Logic Functions)
 # ═══════════════════════════════════════════════
 
 def check_bullish_engulfing(curr, prev):
@@ -55,48 +73,37 @@ def check_pin_bar(candle, direction):
     return False
 
 # ═══════════════════════════════════════════════
-# 3. محرك الاختبار (Backtest Engine)
+# 4. محرك الاختبار (Backtest Engine)
 # ═══════════════════════════════════════════════
 
 def run_backtest_for_pair(symbol):
-    print(f"\n📉 Testing {symbol}...")
+    log(f"\n📉 Testing {symbol}...")
     
-    # جلب البيانات (نحتاج بيانات H1 و M5)
-    # ملاحظة: yfinance قد يكون بطيئاً للسنة الكاملة ببيانات M5، لذا سنقسمها أو نستخدم فترة أقصر إذا لزم الأمر
     try:
-        # لجلب بيانات كافية للـ EMA 200 على H1، نحتاج فترة طويلة
         df_h1 = yf.download(symbol, start=START_DATE, end=END_DATE, interval="1h", progress=False, auto_adjust=False)
         df_m5 = yf.download(symbol, start=START_DATE, end=END_DATE, interval="5m", progress=False, auto_adjust=False)
         
         if df_h1.empty or df_m5.empty:
-            print(f"   ⚠️ No data found for {symbol}")
+            log(f"   ⚠️ No data found for {symbol}")
             return []
 
-        # تنظيف الأعمدة (MultiIndex fix)
         if isinstance(df_h1.columns, pd.MultiIndex): df_h1.columns = df_h1.columns.get_level_values(0)
         if isinstance(df_m5.columns, pd.MultiIndex): df_m5.columns = df_m5.columns.get_level_values(0)
 
-        # حساب المؤشرات
-        df_h1['EMA_200'] = ta.ema(df_h1['Close'], length=EMA_TREND_LEN)
-        df_m5['EMA_50'] = ta.ema(df_m5['Close'], length=EMA_ENTRY_LEN)
-        df_m5['RSI'] = ta.rsi(df_m5['Close'], length=RSI_LEN)
+        # حساب المؤشرات يدوياً
+        df_h1['EMA_200'] = calculate_ema(df_h1['Close'], EMA_TREND_LEN)
+        df_m5['EMA_50'] = calculate_ema(df_m5['Close'], EMA_ENTRY_LEN)
+        df_m5['RSI'] = calculate_rsi(df_m5['Close'], RSI_LEN)
         
         trades = []
-        
-        # نحن نمر على شموع M5، ونبحث عن对应的 شمعة H1
-        # لتبسيط الكود وتسريعه، سنقوم بعمل merge تقريبي أو فحص عند كل شمعة M5
-        
         valid_m5 = df_m5.dropna()
         
-        # حلقة المحاكة (Simulation Loop)
-        # نبدأ من الشمعة 200 لضمان جاهزية المؤشرات
-        for i in range(200, len(valid_m5) - TRADE_DURATION_CANDLES):
+        step = 5 
+        for i in range(200, len(valid_m5) - TRADE_DURATION_CANDLES, step):
             curr_m5 = valid_m5.iloc[i]
             prev_m5 = valid_m5.iloc[i-1]
             curr_time = valid_m5.index[i]
             
-            # 1. تحديد اتجاه H1 في هذه اللحظة
-            # نجد أقرب شمعة H1 سابقة أو حالية
             h1_mask = df_h1.index <= curr_time
             if not h1_mask.any(): continue
             latest_h1 = df_h1[h1_mask].iloc[-1]
@@ -108,17 +115,14 @@ def run_backtest_for_pair(symbol):
             elif latest_h1['Close'] < latest_h1['EMA_200']: trend = "BEARISH"
             else: continue
             
-            # 2. فحص شروط M5
             ema_50_val = curr_m5['EMA_50']
             rsi_val = curr_m5['RSI']
             
-            # شرط اللمسة
             dist = abs(curr_m5['Low'] - ema_50_val) if trend == "BULLISH" else abs(curr_m5['High'] - ema_50_val)
             if (dist / ema_50_val) > TOUCH_THRESHOLD: continue
             
             signal = None
             
-            # منطق الدخول
             if trend == "BULLISH" and rsi_val > 50:
                 if check_bullish_engulfing(curr_m5, prev_m5) or check_pin_bar(curr_m5, 'UP'):
                     signal = "CALL"
@@ -127,7 +131,6 @@ def run_backtest_for_pair(symbol):
                     signal = "PUT"
             
             if signal:
-                # 3. محاكاة النتيجة (بعد 3 شموع)
                 entry_price = curr_m5['Close']
                 exit_candle = valid_m5.iloc[i + TRADE_DURATION_CANDLES]
                 exit_price = exit_candle['Close']
@@ -136,7 +139,6 @@ def run_backtest_for_pair(symbol):
                 if signal == "CALL" and exit_price > entry_price: win = True
                 if signal == "PUT" and exit_price < entry_price: win = True
                 
-                # حساب النقاط (Pips) تقريبياً
                 pip_mult = 100 if "JPY" in symbol else 10000
                 pips_gained = abs(exit_price - entry_price) * pip_mult
                 net_pips = pips_gained - SPREAD_PIPS if win else -pips_gained - SPREAD_PIPS
@@ -151,11 +153,11 @@ def run_backtest_for_pair(symbol):
         return trades
 
     except Exception as e:
-        print(f"   ❌ Error processing {symbol}: {e}")
+        log(f"   ❌ Error processing {symbol}: {e}")
         return []
 
 # ═══════════════════════════════════════════════
-# 4. التقرير النهائي (Final Report)
+# 5. التقرير النهائي (Final Report)
 # ═══════════════════════════════════════════════
 
 def main():
@@ -164,10 +166,10 @@ def main():
     for pair in PAIRS:
         trades = run_backtest_for_pair(pair)
         all_trades.extend(trades)
-        time.sleep(2) # راحة للياهو فاينانس
+        time.sleep(2) 
     
     if not all_trades:
-        print("\n❌ NO TRADES GENERATED IN THE ENTIRE YEAR.")
+        log("\n❌ NO TRADES GENERATED IN THE PERIOD.")
         return
 
     df_results = pd.DataFrame(all_trades)
@@ -178,8 +180,6 @@ def main():
     
     total_pips = df_results['pips'].sum()
     
-    # حساب الربح المالي التقديري
-    # نفترض payout 85% للفوز، و خسارة 100% للخسارة
     profit_money = 0
     for _, row in df_results.iterrows():
         if row['win']:
@@ -190,24 +190,24 @@ def main():
     final_balance = INITIAL_BALANCE + profit_money
     roi = ((final_balance - INITIAL_BALANCE) / INITIAL_BALANCE) * 100
 
-    print("\n" + "="*60)
-    print("🏁 BACKTEST RESULTS (1 YEAR SIMULATION)")
-    print("="*60)
-    print(f"📅 Period: {START_DATE} to {END_DATE}")
-    print(f"📊 Total Trades Found: {total_trades}")
-    print(f"✅ Wins: {wins} | ❌ Losses: {losses}")
-    print(f"🏆 WIN RATE: {win_rate:.2f}%")
-    print(f"📈 Total Net Pips: {total_pips:.2f}")
-    print(f"💰 Financial Simulation (Payout 85%):")
-    print(f"   Start Balance: ${INITIAL_BALANCE}")
-    print(f"   End Balance:   ${final_balance:.2f}")
-    print(f"   ROI:           {roi:.2f}%")
-    print("="*60)
+    log("\n" + "="*60)
+    log("🏁 BACKTEST RESULTS (LAST 90 DAYS SIMULATION)")
+    log("="*60)
+    log(f"📅 Period: {START_DATE} to {END_DATE}")
+    log(f"📊 Total Trades Found: {total_trades}")
+    log(f"✅ Wins: {wins} | ❌ Losses: {losses}")
+    log(f"🏆 WIN RATE: {win_rate:.2f}%")
+    log(f"📈 Total Net Pips: {total_pips:.2f}")
+    log(f"💰 Financial Simulation (Payout 85%):")
+    log(f"   Start Balance: ${INITIAL_BALANCE}")
+    log(f"   End Balance:   ${final_balance:.2f}")
+    log(f"   ROI:           {roi:.2f}%")
+    log("="*60)
     
     if win_rate > 60 and roi > 0:
-        print("🟢 VERDICT: STRATEGY IS PROFITABLE. Ready for Live Demo.")
+        log("🟢 VERDICT: STRATEGY IS PROFITABLE. Ready for Live Demo.")
     else:
-        print("🔴 VERDICT: STRATEGY NEEDS OPTIMIZATION. Do not trade live yet.")
+        log("🔴 VERDICT: STRATEGY NEEDS OPTIMIZATION. Do not trade live yet.")
 
 if __name__ == "__main__":
     main()
