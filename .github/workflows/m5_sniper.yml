@@ -1,10 +1,16 @@
 name: M5 Sniper Bot (M15 BB Strategy)
 
 on:
-  schedule:
-    # تشغيل البوت تلقائياً كل 15 دقيقة (متوافق مع فريم الاستراتيجية الجديد)
-    - cron: '*/15 * * * *' 
-  workflow_dispatch: # يسمح لك بتشغيله يدوياً في أي وقت للتجربة
+  # تم تعطيل الجدول الزمني الداخلي لتجنب التعارض مع النبضة الخارجية
+  # schedule:
+  #   - cron: '*/15 * * * *' 
+  
+  workflow_dispatch: # يستقبل الأوامر من النبضة الخارجية فقط
+    inputs:
+      debug_mode:
+        description: 'Run in debug mode'
+        required: false
+        default: 'false'
 
 jobs:
   run-bot:
@@ -29,4 +35,5 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ secrets.TG_CHAT }}
+          DEBUG_MODE: ${{ github.event.inputs.debug_mode }}
         run: python m5_bot.py
