@@ -1,11 +1,13 @@
-name: Run One-Time Backtest
+name: Run Sniper Backtest Lab
 
 on:
-  workflow_dispatch: # Allows manual trigger only
+  workflow_dispatch: # يسمح بالتشغيل اليدوي فقط
 
 jobs:
   run-backtest:
     runs-on: ubuntu-latest
+    timeout-minutes: 20 # زيادة وقت الانتظار إلى 20 دقيقة لضمان الانتهاء
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -18,14 +20,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install yfinance pandas numpy matplotlib
+          pip install yfinance pandas pandas_ta numpy
 
       - name: Execute Backtest Script
-        run: python backtest_m5_lab.py
+        run: python backtest_sniper_lab.py
         
       - name: Upload Results Artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backtest-results-charts
-          path: *.png
+          name: backtest-results
+          path: results.txt # سنقوم بحفظ النتائج في ملف نصي
