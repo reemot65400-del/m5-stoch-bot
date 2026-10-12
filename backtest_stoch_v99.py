@@ -1,187 +1,174 @@
-import yfinance as yf
-import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
+import pandas as pd
+import yfinance as yf
+import warnings
 import time
+warnings.filterwarnings('ignore')
 
-# ═══════════════════════════════════════════════
-# 1. إعدادات مختبر Stochastic v9.9
-# ═══════════════════════════════════════════════
-PAIRS = [
-    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X", 
-    "USDCAD=X", "NZDUSD=X", "EURCHF=X", "GBPJPY=X"    
+# ==========================================
+# CONFIGURATION: M15 BOLLINGER TREND REVERSAL
+# ==========================================
+SYMBOLS = [
+    "EURUSD=X", "GBPUSD=X", "USDJPY=X", 
+    "AUDUSD=X", "NZDUSD=X"
 ]
+TIMEFRAME = "15m"
+PERIOD_LIMIT = "60d" 
+BREAK_EVEN_WR = 0.5263 
 
-END_DATE = datetime.now().strftime("%Y-%m-%d")
-START_DATE = (datetime.now() - timedelta(days=50)).strftime("%Y-%m-%d")
+# Strategy Parameters
+BB_PERIOD = 15
+BB_STD_DEV = 2.3
+EMA_TREND_PERIOD = 200
 
-# معاملات استراتيجية الستوكاستيك (نفس البوت الحي)
-K_PERIOD = 9
-D_PERIOD = 3
-OVERBOUGHT_ZONE = 85
-OVERSOLD_ZONE = 15
-EMA_PERIOD = 200
-
-TRADE_DURATION_CANDLES = 1 # مدة الصفقة 5 دقائق (شمعة واحدة M5)
-SPREAD_PIPS = 1.5 
-INITIAL_BALANCE = 10000
-BET_SIZE = 100 
-
-RESULT_FILE = "results_stoch_v99.txt"
+RESULT_FILE = "results_bb_m15.txt"
 
 def log(msg):
     print(msg)
     with open(RESULT_FILE, "a", encoding="utf-8") as f:
         f.write(msg + "\n")
 
-log(f"🧪 Starting Stochastic v9.9 Backtest: {START_DATE} to {END_DATE}")
-
-# ═══════════════════════════════════════════════
-# 2. دوال حساب المؤشرات (Pandas Only)
-# ═══════════════════════════════════════════════
-
-def calculate_ema(series, period):
-    return series.ewm(span=period, adjust=False).mean()
-
-def calculate_stochastic(df, k_period, d_period):
-    low_min = df['Low'].rolling(window=k_period).min()
-    high_max = df['High'].rolling(window=k_period).max()
-    denom = high_max - low_min
-    denom = denom.replace(0, np.nan)
-    
-    raw_k = 100 * ((df['Close'] - low_min) / denom)
-    df['STOCH_K_RAW'] = raw_k.ffill().fillna(50)
-    df['STOCH_K'] = df['STOCH_K_RAW'].rolling(window=d_period).mean().ffill()
-    df['STOCH_D'] = df['STOCH_K'].rolling(window=d_period).mean().ffill()
+def flatten_columns(df):
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = [col[0] for col in df.columns]
     return df
 
-# ═══════════════════════════════════════════════
-# 3. محرك الاختبار (Stochastic Logic)
-# ═══════════════════════════════════════════════
-
-def run_backtest_for_pair(symbol):
-    log(f"\n Testing {symbol} (Stoch v9.9)...")
-    
+def get_data(symbol, period=PERIOD_LIMIT, interval=TIMEFRAME):
     try:
-        df_m5 = yf.download(symbol, start=START_DATE, end=END_DATE, interval="5m", progress=False, auto_adjust=False)
-        
-        if df_m5.empty:
-            log(f"   ⚠️ No data found for {symbol}")
-            return []
-
-        if isinstance(df_m5.columns, pd.MultiIndex): df_m5.columns = df_m5.columns.get_level_values(0)
-
-        # حساب المؤشرات
-        df_m5['EMA_200'] = calculate_ema(df_m5['Close'], EMA_PERIOD)
-        df_m5 = calculate_stochastic(df_m5, K_PERIOD, D_PERIOD)
-        
-        trades = []
-        valid_df = df_m5.dropna()
-        
-        # نبدأ من الشمعة 250 لضمان جاهزية EMA 200 والستوكاستيك
-        start_index = max(250, len(valid_df) - TRADE_DURATION_CANDLES - 1)
-        if start_index < 0: start_index = 0
-        
-        # فحص كل شمعة (بدون step لتجنب تفويت إشارات الستوكاستيك السريعة)
-        for i in range(start_index, len(valid_df) - TRADE_DURATION_CANDLES):
-            curr = valid_df.iloc[i]
-            prev = valid_df.iloc[i-1]
-            curr_time = valid_df.index[i]
-            
-            price = float(curr['Close'])
-            ema = float(curr['EMA_200'])
-            k_now, d_now = float(curr['STOCH_K']), float(curr['STOCH_D'])
-            k_pre, d_pre = float(prev['STOCH_K']), float(prev['STOCH_D'])
-            
-            signal = None
-            
-            # ★★ منطق الشراء (CALL) - مطابق للبوت الحي ★★
-            if price > ema and k_pre <= d_pre and k_now > d_now and min(k_pre, k_now) < OVERSOLD_ZONE:
-                signal = "CALL"
-                
-            # ★★ منطق البيع (PUT) - مطابق للبوت الحي ★★
-            elif price < ema and k_pre >= d_pre and k_now < d_now and max(k_pre, k_now) > OVERBOUGHT_ZONE:
-                signal = "PUT"
-            
-            if signal:
-                entry_price = curr['Close']
-                exit_candle = valid_df.iloc[i + TRADE_DURATION_CANDLES]
-                exit_price = exit_candle['Close']
-                
-                win = False
-                if signal == "CALL" and exit_price > entry_price: win = True
-                if signal == "PUT" and exit_price < entry_price: win = True
-                
-                pip_mult = 100 if "JPY" in symbol else 10000
-                pips_gained = abs(exit_price - entry_price) * pip_mult
-                net_pips = pips_gained - SPREAD_PIPS if win else -pips_gained - SPREAD_PIPS
-                
-                trades.append({
-                    "time": curr_time,
-                    "signal": signal,
-                    "win": win,
-                    "pips": net_pips
-                })
-                
-        return trades
-
+        ticker = yf.Ticker(symbol)
+        df = ticker.history(period=period, interval=interval)
+        if df.empty: return None
+        df = flatten_columns(df)
+        required_cols = ['Open', 'High', 'Low', 'Close']
+        if not all(col in df.columns for col in required_cols): return None
+        df = df.dropna(subset=['Close'])
+        df.sort_index(inplace=True)
+        df = df[~df.index.duplicated(keep='first')]
+        return df[['Open', 'High', 'Low', 'Close']]
     except Exception as e:
-        log(f"   ❌ Error processing {symbol}: {e}")
-        return []
+        log(f"Error fetching {symbol}: {e}")
+        return None
 
-# ═══════════════════════════════════════════════
-# 4. التقرير النهائي
-# ═══════════════════════════════════════════════
+def calculate_indicators(df):
+    """Calculates BB(15, 2.3) and EMA(200) with Population Std Dev."""
+    c = df['Close']
+    
+    # 1. Bollinger Bands (Population Std Dev ddof=0 is critical)
+    sma = c.rolling(window=BB_PERIOD).mean()
+    std = c.rolling(window=BB_PERIOD).std(ddof=0) 
+    upper_band = sma + (BB_STD_DEV * std)
+    lower_band = sma - (BB_STD_DEV * std)
+    
+    # 2. Exponential Moving Average (Trend Filter)
+    ema_200 = c.ewm(span=EMA_TREND_PERIOD, adjust=False).mean()
+    
+    return df.assign(
+        BB_Upper=upper_band,
+        BB_Lower=lower_band,
+        EMA_200=ema_200
+    )
+
+def run_backtest(df):
+    """Executes the strict entry rules and calculates Win Rate/Z-Score."""
+    trades = []
+    n = len(df)
+    
+    # Start after indicators are stable
+    start_idx = max(BB_PERIOD, EMA_TREND_PERIOD) + 1
+    
+    for i in range(start_idx, n - 1):
+        curr_close = df['Close'].iloc[i]
+        next_close = df['Close'].iloc[i+1]
+        
+        # Skip ties
+        if curr_close == next_close:
+            continue
+            
+        bb_upper = df['BB_Upper'].iloc[i]
+        bb_lower = df['BB_Lower'].iloc[i]
+        ema_200 = df['EMA_200'].iloc[i]
+        
+        direction = 0 # 0=None, 1=CALL, -1=PUT
+        
+        # --- BUY RULE (CALL) ---
+        if curr_close > ema_200 and curr_close <= bb_lower:
+            direction = 1
+            
+        # --- SELL RULE (PUT) ---
+        elif curr_close < ema_200 and curr_close >= bb_upper:
+            direction = -1
+            
+        if direction != 0:
+            win = False
+            if direction == 1: # CALL
+                win = next_close > curr_close
+            else: # PUT
+                win = next_close < curr_close
+                
+            trades.append(win)
+            
+    return trades
+
+def analyze_results(all_trades):
+    """Calculates statistical metrics."""
+    total = len(all_trades)
+    if total == 0:
+        return {'count': 0, 'wr': 0, 'z_score': 0}
+        
+    wins = sum(all_trades)
+    wr = wins / total
+    
+    # Z-Score Calculation against Break-even Probability
+    p_null = BREAK_EVEN_WR
+    std_dev = np.sqrt(total * p_null * (1 - p_null))
+    z_score = (wins - (total * p_null)) / std_dev if std_dev > 0 else 0
+    
+    return {'count': total, 'wr': wr, 'z_score': z_score}
 
 def main():
-    all_trades = []
+    log("="*60)
+    log("VALIDATING: M15 BOLLINGER TREND REVERSAL")
+    log(f"Period: Last {PERIOD_LIMIT} | TF: {TIMEFRAME}")
+    log("="*60)
     
-    for pair in PAIRS:
-        trades = run_backtest_for_pair(pair)
-        all_trades.extend(trades)
-        time.sleep(2) 
+    global_trades = []
     
-    if not all_trades:
-        log("\n❌ NO TRADES GENERATED.")
-        return
-
-    df_results = pd.DataFrame(all_trades)
-    total_trades = len(df_results)
-    wins = df_results[df_results['win'] == True].shape[0]
-    losses = total_trades - wins
-    win_rate = (wins / total_trades) * 100
-    
-    total_pips = df_results['pips'].sum()
-    
-    profit_money = 0
-    for _, row in df_results.iterrows():
-        if row['win']:
-            profit_money += (BET_SIZE * 0.85)
+    for sym in SYMBOLS:
+        # ★★ التصحيح هنا: إزالة end=" " لأن دالة log لا تدعمها ★★
+        log(f"Processing {sym}...") 
+        
+        df = get_data(sym)
+        if df is not None and len(df) > 250:
+            enriched_df = calculate_indicators(df)
+            trades = run_backtest(enriched_df)
+            global_trades.extend(trades)
+            log(f"   -> Done ({len(trades)} signals)")
         else:
-            profit_money -= BET_SIZE
+            log("   -> Skipped (Insufficient Data)")
+        time.sleep(1) 
             
-    final_balance = INITIAL_BALANCE + profit_money
-    roi = ((final_balance - INITIAL_BALANCE) / INITIAL_BALANCE) * 100
-
-    log("\n" + "="*60)
-    log("🏁 STOCHASTIC v9.9 BACKTEST RESULTS (LAST 50 DAYS)")
-    log("="*60)
-    log(f"📊 Total Trades Found: {total_trades}")
-    log(f"✅ Wins: {wins} | ❌ Losses: {losses}")
-    log(f"🏆 WIN RATE: {win_rate:.2f}%")
-    log(f" Total Net Pips: {total_pips:.2f}")
-    log(f"💰 Financial Simulation (Payout 85%):")
-    log(f"   Start Balance: ${INITIAL_BALANCE}")
-    log(f"   End Balance:   ${final_balance:.2f}")
-    log(f"   ROI:           {roi:.2f}%")
-    log("="*60)
+    stats = analyze_results(global_trades)
     
-    if win_rate > 56 and roi > 0:
-        log("🟢 VERDICT: STRATEGY IS PROFITABLE! Keep using it live.")
-    elif win_rate > 50:
-        log("🟡 VERDICT: BREAK-EVEN ZONE. Needs minor tweaks.")
+    log("\n" + "-"*40)
+    log("FINAL STATISTICAL REPORT")
+    log("-"*40)
+    log(f"Total Signals Generated: {stats['count']}")
+    log(f"Overall Win Rate:        {stats['wr']*100:.2f}%")
+    log(f"Z-Score (Significance):  {stats['z_score']:.2f}")
+    
+    verdict = "FAILING"
+    if stats['count'] >= 100: 
+        if stats['wr'] >= 0.58 and stats['z_score'] > 2.0:
+            verdict = "EXCELLENT 🏆"
+        elif stats['wr'] >= BREAK_EVEN_WR and stats['z_score'] > 1.0:
+            verdict = "VIABLE ⚠️"
+        else:
+            verdict = "FRAGILE ❌"
     else:
-        log("🔴 VERDICT: LOSING. Consider adjusting zones or duration.")
+        verdict = "INSUFFICIENT DATA (<100 trades)"
+            
+    log(f"Verdict:                 {verdict}")
+    log("="*60)
 
 if __name__ == "__main__":
     main()
