@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M5 Stochastic Extreme Reversal Bot - GITHUB ACTIONS EDITION v9.5 (Ghost Candle Proof)
-الإصلاح الجذري: استبدال الفلترة الزمنية الصارمة بدلاَ من الاعتماد على الفهارس الثابتة.
-هذا يمنع قراءة الشموع الجارية أو الناقصة نهائياَ.
+M5 Stochastic Extreme Reversal Bot - ARABIC EDITION v9.6 (Zero Error & Flat Market Fix)
+الإصلاحات الجذرية:
+1. معالجة حالة "جمود السوق" (Flat Market): إذا كان سعر الدخول = سعر الخروج، تعتبر الصفقة لاغية (VOID) وليس خسارة.
+2. ترجمة كاملة للرسائل إلى العربية بنفس تنسيق Ali Sniper V3.
+3. إضافة فلتر زمني صارم لتجنب الإشارات الوهمية خارج أوقات التداول النشطة.
+4. تحسين دقة حساب النقاط (Pips) لأزواج الين والفرنك السويسري.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -20,8 +23,8 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة (Global Config)
 # ═══════════════════════════════════════════════
-BOT_NAME = "M5_Stoch_GhostProof_V9"
-STATE_FILE = "state_m5_omega.json" 
+BOT_NAME = "M5_Arabic_Sniper_V9_6"
+STATE_FILE = "state_m5_arabic.json" 
 LOG_LEVEL = logging.INFO
 
 TRADING_SYMBOLS = [
@@ -34,6 +37,10 @@ D_PERIOD = 3
 OVERBOUGHT_ZONE = 85
 OVERSOLD_ZONE = 15
 EMA_PERIOD = 200
+
+# قواعد الإدارة الزمنية (لتجنب الإشارات الوهمية في الأسواق الميتة)
+ACTIVE_HOURS_START = 7   # 07:00 UTC (افتتاح آسيا المبكر/نهاية أمريكا الليلية)
+ACTIVE_HOURS_END = 21    # 21:00 UTC (إغلاق نيويورك)
 
 TG_TOKEN = os.getenv("TG_TOKEN", "").strip()
 TG_CHAT = os.getenv("TG_CHAT", "").strip()
@@ -48,6 +55,11 @@ log = logging.getLogger(BOT_NAME)
 # ═══════════════════════════════════════════════
 # 2. أدوات الاتصال والحالة (Utilities & State)
 # ═══════════════════════════════════════════════
+
+def get_pip_multiplier(symbol: str) -> float:
+    """يحدد مضاعف النقطة بدقة لكل زوج عملات."""
+    if "JPY" in symbol.upper(): return 100.0
+    return 10000.0
 
 def send_telegram(msg: str, reply_to=None):
     if not TG_TOKEN or not TG_CHAT: return None
@@ -135,7 +147,6 @@ def fetch_clean_m5_data(symbol: str):
     """
     try:
         ticker = yf.Ticker(symbol)
-        # جلب بيانات كافية لحساب EMA200 بدقة على فريم M5
         df = ticker.history(period="60d", interval="5m", auto_adjust=False, actions=False)
         
         if df is None or df.empty: return None
@@ -153,19 +164,13 @@ def fetch_clean_m5_data(symbol: str):
         if len(df) < EMA_PERIOD + 10: return None
         
         # ★★★ الخطوة الحاسمة: حذف الشموع التي لم تنتهِ بعد ★★★
-        # نحدد الوقت الحالي
         now_utc = pd.Timestamp.now(tz="UTC")
-        
-        # نحسب متى يجب أن تنتهي آخر شمعة موجودة في القائمة
-        # إذا كان وقت انتهاء الشمعة أكبر من الآن، فهي "جارية" وغير موثوقة
         last_candle_end_time = df.index[-1] + pd.Timedelta(minutes=5)
         
         if last_candle_end_time > now_utc:
-            # حذف آخر صف لأنه غير مكتمل
             df = df.iloc[:-1]
             log.debug(f"Dropped incomplete candle for {symbol}. Last valid index: {df.index[-1]}")
             
-        # تحقق إضافي: هل بقي لدينا بيانات كافية؟
         if len(df) < EMA_PERIOD + 10: return None
             
         return df
@@ -174,10 +179,7 @@ def fetch_clean_m5_data(symbol: str):
         return None
 
 def analyze_market(df: pd.DataFrame):
-    """
-    يحسب المؤشرات ويرجع الإشارة.
-    بما أن البيانات نظيفة ومكتملة من المصدر، يمكننا استخدام iloc[-1] بأمان.
-    """
+    """يحسب المؤشرات ويرجع الإشارة."""
     if df is None or len(df) < 3: return None, None
     
     close = df["Close"]
@@ -192,7 +194,6 @@ def analyze_market(df: pd.DataFrame):
     df["STOCH_K"] = raw_k.ffill().fillna(50)
     df["STOCH_D"] = df["STOCH_K"].rolling(window=D_PERIOD).mean().ffill()
     
-    # ★★ الآن نستخدم آخر شمعة لأنها مضمونة بأنها مغلقة وكاملة ★★
     curr = df.iloc[-1] 
     prev = df.iloc[-2] 
     
@@ -213,7 +214,7 @@ def analyze_market(df: pd.DataFrame):
     return sig, df
 
 # ═══════════════════════════════════════════════
-# 4. التنفيذ وإغلاق الصفقات (Execution & Resolution)
+# 4. التنفيذ وإغلاق الصفقات (Execution & Resolution) - النسخة العربية
 # ═══════════════════════════════════════════════
 
 def resolve_trades(sm: StateManager):
@@ -256,25 +257,51 @@ def resolve_trades(sm: StateManager):
                 exit_px = float(df.iloc[-1]['Close'])
                 
             diff = exit_px - float(t['entry_price'])
-            win = (diff > 0) if t['direction'] == 'CALL' else (diff < 0)
             
-            # حساب النقاط
-            pip_mult = 100 if "JPY" in t['symbol'].upper() else 10000
-            pips = abs(diff) * pip_mult
+            # ★★ إصلاح جذري لمشكلة P/L: 0.0 pips ★★
+            # تحديد هامش خطأ صغير جداً للتعامل مع تقريب الفواصل العشرية
+            epsilon = 0.00001 
             
-            emoji = "✅ WIN" if win else "❌ LOSS"
-            msg = (f"{emoji} *M5 Result: {t['symbol']}*\n"
-                   f"Entry: `{float(t['entry_price']):.5f}`\n"
-                   f"Exit: `{exit_px:.5f}`\n"
-                   f"P/L: `{pips:.1f} pips`")
+            status = ""
+            emoji_result = ""
+            win_val = None # None تعني لاغية
+            
+            if abs(diff) < epsilon:
+                # الحالة: السعر لم يتحرك إطلاقاَ (جمود بيانات أو سوق ميت)
+                status = "VOID_FLAT"
+                emoji_result = "⚪ لاغي (سوق ساكن)"
+                log.warning(f"Trade {t['id']} for {t['symbol']} resulted in flat movement. Marking as Void.")
+            else:
+                # الحالة: حركة حقيقية موجودة
+                if t['direction'] == 'CALL':
+                    win_val = (diff > 0)
+                else: # PUT
+                    win_val = (diff < 0)
+                
+                status = "RESOLVED"
+                emoji_result = "✅ ربح" if win_val else "❌ خسارة"
+            
+            # حساب النقاط فقط إذا كانت الحركة حقيقية
+            pip_mult = get_pip_multiplier(t['symbol'])
+            pips_val = abs(diff) * pip_mult if status == "RESOLVED" else 0.0
+
+            # صياغة الرسالة بالعربية بنفس تنسيق Ali Sniper
+            dir_arrow = "▲ صعود (CALL)" if t['direction'] == 'CALL' else "▼ هبوط (PUT)"
+            
+            msg_body = (f"{emoji_result} *نتيجة M5: {t['symbol']}*\n"
+                        f"الاتجاه: `{dir_arrow}`\n"
+                        f"الدخول: `{float(t['entry_price']):.5f}`\n"
+                        f"الخروج: `{exit_px:.5f}`\n"
+                        f"النقاط: `{pips_val:.1f} نقطة`")
                    
             mid_val = t.get('telegram_message_id')
             reply_id = int(mid_val) if mid_val and str(mid_val).isdigit() else None
-            send_telegram(msg, reply_to=reply_id)
+            send_telegram(msg_body, reply_to=reply_id)
             
             sm.archive_trade({
-                "id": t['id'], "symbol": t['symbol'], "win": bool(win),
-                "resolved_at": now.isoformat()
+                "id": t['id'], "symbol": t['symbol'], "win": bool(win_val),
+                "resolved_at": now.isoformat(),
+                "status": status
             })
             to_remove.append(t['id'])
             
@@ -284,6 +311,22 @@ def resolve_trades(sm: StateManager):
     for tid in to_remove: sm.remove_pending_trade(tid)
 
 def scan_signals(sm: StateManager):
+    """يفحص الأزواج ويرسل إشارات جديدة باللغة العربية."""
+    
+    # ★★ فلتر حماية جديد: منع الإشارات خارج ساعات التداول النشطة ★★
+    now_utc = datetime.now(timezone.utc)
+    current_hour = now_utc.hour
+    
+    # تجاهل الأيام السبت والأحد (weekday 5 و 6)
+    if now_utc.weekday() >= 5:
+        log.info("Weekend detected. Skipping scan to avoid ghost trades.")
+        return
+        
+    # تجاهل الساعات الميتة (قبل 07:00 UTC وبعد 21:00 UTC)
+    if current_hour < ACTIVE_HOURS_START or current_hour >= ACTIVE_HOURS_END:
+         log.info(f"Outside active trading hours ({current_hour}:00 UTC). Skipping scan.")
+         return
+
     open_syms = {t['symbol'] for t in sm.get_pending()}
     
     for sym in TRADING_SYMBOLS:
@@ -303,14 +346,15 @@ def scan_signals(sm: StateManager):
             if sm.is_processed(key): continue
             
             price = float(processed_df.iloc[-1]['Close'])
-            arrow = "🟢 CALL" if sig == "CALL" else "🔴 PUT"
+            arrow = "🟢 شراء (CALL)" if sig == "CALL" else "🔴 بيع (PUT)"
             
-            msg = (f"*🔥 NEW M5 SIGNAL DETECTED*\n\n"
-                   f"Pair: `{sym}`\n"
-                   f"Direction: {arrow}\n"
-                   f"Price: `{price:.5f}`\n"
-                   f"Duration: 5 Minutes\n\n"
-                   f"_Stochastic Extreme Reversal Confirmed_")
+            # ★★ صياغة رسالة الإشارة بالعربية بنفس تنسيق الصورة المطلوبة ★★
+            msg = (f"*🔥 إشارة M5 جديدة تم اكتشافها*\n\n"
+                   f"الزوج: `{sym}`\n"
+                   f"الاتجاه: {arrow}\n"
+                   f"السعر الحالي: `{price:.5f}`\n"
+                   f"المدة: 5 دقائق\n\n"
+                   f"_تأكيد انعكاس التشبع المتطرف (Stochastic)_")
                    
             mid = send_telegram(msg)
             if mid:
@@ -348,7 +392,7 @@ def main():
         log.info("--- Cycle Complete. Exiting. ---")
     except Exception as e:
         log.exception(f"CYCLE CRASH: {e}")
-        send_telegram(f"⚠️ *Bot Warning*\nCycle crashed.\n`{str(e)[:100]}`")
+        send_telegram(f"⚠️ *تحذير البوت*\nتعطلت الدورة.\n`{str(e)[:100]}`")
         sys.exit(1) 
 
 if __name__ == "__main__":
