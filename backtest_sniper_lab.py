@@ -13,14 +13,15 @@ PAIRS = [
 ]
 
 END_DATE = datetime.now().strftime("%Y-%m-%d")
-START_DATE = (datetime.now() - timedelta(days=90)).strftime("%Y-%m-%d")
+# ★★ التعديل الجوهري: تغيير الفترة من 90 إلى 50 يوم لتجنب خطأ ياهو فاينانس ★★
+START_DATE = (datetime.now() - timedelta(days=50)).strftime("%Y-%m-%d")
 
 EMA_TREND_LEN = 200
 EMA_ENTRY_LEN = 50
 RSI_LEN = 14
 TOUCH_THRESHOLD = 0.0015 
 
-TRADE_DURATION_CANDLES = 3 
+TRADE_DURATION_CANDLES = 3 # 15 minutes (3 candles of 5m)
 SPREAD_PIPS = 2.0 
 INITIAL_BALANCE = 10000
 BET_SIZE = 100 
@@ -33,6 +34,7 @@ def log(msg):
         f.write(msg + "\n")
 
 log(f"🧪 Starting Backtest Lab (Pure Pandas Mode): {START_DATE} to {END_DATE}")
+log(f"⚠️ Note: Period limited to 50 days due to Yahoo Finance 5m data restriction.")
 
 # ═══════════════════════════════════════════════
 # 2. دوال حساب المؤشرات يدوياً (بدون pandas_ta)
@@ -80,6 +82,7 @@ def run_backtest_for_pair(symbol):
     log(f"\n📉 Testing {symbol}...")
     
     try:
+        # جلب البيانات (الآن لفترة 50 يوم فقط)
         df_h1 = yf.download(symbol, start=START_DATE, end=END_DATE, interval="1h", progress=False, auto_adjust=False)
         df_m5 = yf.download(symbol, start=START_DATE, end=END_DATE, interval="5m", progress=False, auto_adjust=False)
         
@@ -87,6 +90,7 @@ def run_backtest_for_pair(symbol):
             log(f"   ⚠️ No data found for {symbol}")
             return []
 
+        # تنظيف الأعمدة (MultiIndex fix)
         if isinstance(df_h1.columns, pd.MultiIndex): df_h1.columns = df_h1.columns.get_level_values(0)
         if isinstance(df_m5.columns, pd.MultiIndex): df_m5.columns = df_m5.columns.get_level_values(0)
 
@@ -98,12 +102,21 @@ def run_backtest_for_pair(symbol):
         trades = []
         valid_m5 = df_m5.dropna()
         
-        step = 5 
-        for i in range(200, len(valid_m5) - TRADE_DURATION_CANDLES, step):
+        # حلقة المحاكاة
+        # نبدأ من الشمعة 200 لضمان جاهزية المؤشرات (EMA 200 يحتاج بيانات كافية)
+        # ملاحظة: بما أننا نستخدم 50 يوم فقط، قد تكون البيانات محدودة لـ EMA 200 على H1
+        # لكننا سنحاول البدء من أبعد نقطة ممكنة
+        start_index = min(200, len(valid_m5) - TRADE_DURATION_CANDLES - 1)
+        if start_index < 0: start_index = 0
+        
+        step = 5 # فحص كل 5 شموع لتسريع العملية
+        
+        for i in range(start_index, len(valid_m5) - TRADE_DURATION_CANDLES, step):
             curr_m5 = valid_m5.iloc[i]
             prev_m5 = valid_m5.iloc[i-1]
             curr_time = valid_m5.index[i]
             
+            # 1. تحديد اتجاه H1 في هذه اللحظة
             h1_mask = df_h1.index <= curr_time
             if not h1_mask.any(): continue
             latest_h1 = df_h1[h1_mask].iloc[-1]
@@ -115,14 +128,17 @@ def run_backtest_for_pair(symbol):
             elif latest_h1['Close'] < latest_h1['EMA_200']: trend = "BEARISH"
             else: continue
             
+            # 2. فحص شروط M5
             ema_50_val = curr_m5['EMA_50']
             rsi_val = curr_m5['RSI']
             
+            # شرط اللمسة
             dist = abs(curr_m5['Low'] - ema_50_val) if trend == "BULLISH" else abs(curr_m5['High'] - ema_50_val)
             if (dist / ema_50_val) > TOUCH_THRESHOLD: continue
             
             signal = None
             
+            # منطق الدخول
             if trend == "BULLISH" and rsi_val > 50:
                 if check_bullish_engulfing(curr_m5, prev_m5) or check_pin_bar(curr_m5, 'UP'):
                     signal = "CALL"
@@ -131,6 +147,7 @@ def run_backtest_for_pair(symbol):
                     signal = "PUT"
             
             if signal:
+                # 3. محاكاة النتيجة (بعد 3 شموع = 15 دقيقة)
                 entry_price = curr_m5['Close']
                 exit_candle = valid_m5.iloc[i + TRADE_DURATION_CANDLES]
                 exit_price = exit_candle['Close']
@@ -139,6 +156,7 @@ def run_backtest_for_pair(symbol):
                 if signal == "CALL" and exit_price > entry_price: win = True
                 if signal == "PUT" and exit_price < entry_price: win = True
                 
+                # حساب النقاط (Pips)
                 pip_mult = 100 if "JPY" in symbol else 10000
                 pips_gained = abs(exit_price - entry_price) * pip_mult
                 net_pips = pips_gained - SPREAD_PIPS if win else -pips_gained - SPREAD_PIPS
@@ -166,10 +184,11 @@ def main():
     for pair in PAIRS:
         trades = run_backtest_for_pair(pair)
         all_trades.extend(trades)
-        time.sleep(2) 
+        time.sleep(2) # راحة للياهو فاينانس
     
     if not all_trades:
         log("\n❌ NO TRADES GENERATED IN THE PERIOD.")
+        log("   Possible reasons: Market was sideways, or strict criteria were not met.")
         return
 
     df_results = pd.DataFrame(all_trades)
@@ -180,6 +199,7 @@ def main():
     
     total_pips = df_results['pips'].sum()
     
+    # حساب الربح المالي التقديري (Payout 85%)
     profit_money = 0
     for _, row in df_results.iterrows():
         if row['win']:
@@ -191,7 +211,7 @@ def main():
     roi = ((final_balance - INITIAL_BALANCE) / INITIAL_BALANCE) * 100
 
     log("\n" + "="*60)
-    log("🏁 BACKTEST RESULTS (LAST 90 DAYS SIMULATION)")
+    log("🏁 BACKTEST RESULTS (LAST 50 DAYS SIMULATION)")
     log("="*60)
     log(f"📅 Period: {START_DATE} to {END_DATE}")
     log(f"📊 Total Trades Found: {total_trades}")
