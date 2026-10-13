@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - FREEZE & RESOLVE v3.0
-الميزات: تجميد الزوج 15 دقيقة + حسم تلقائي بعد 15 دقيقة + تقارير يومية.
+M15 Bollinger Trend Reversal Bot - FIXED & GAZA TIME v3.1
+الإصلاحات:
+1. دعم reply_to في رسائل الحسم (ربط النتيجة بالإشارة).
+2. تصحيح منطق التجميد ليرتبط بوقت إغلاق الشمعة (يمنع تفويت الفرص).
+3. تعديل ساعات العمل لتبدأ الساعة 9 صباحاُ بتوقيت غزة (06:00 UTC).
+4. حفظ ذرّي آمن للملفات.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -22,8 +26,8 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_Freeze_v3"
-STATE_FILE = "state_m15_freeze.json"
+BOT_NAME = "M15_BB_Sniper_Fixed_Gaza_v3_1"
+STATE_FILE = "state_m15_fixed_gaza.json" 
 LOG_LEVEL = logging.INFO
 
 TRADING_SYMBOLS = [
@@ -37,8 +41,10 @@ BB_PERIOD = 15
 BB_STD_DEV = 2.3
 EMA_TREND_PERIOD = 200
 
-ACTIVE_HOURS_START = 7
-ACTIVE_HOURS_END = 21
+# ★★ التعديل الجوهري: توقيت غزة المحلي (UTC+3) ★★
+# 9 صباحاُ غزة = 06:00 UTC | 21 مساءً غزة = 18:00 UTC
+ACTIVE_HOURS_START = 6   # 06:00 UTC (9 AM Gaza)
+ACTIVE_HOURS_END = 18    # 18:00 UTC (9 PM Gaza)
 
 FREEZE_DURATION_MINUTES = 15
 TRADE_DURATION_MINUTES = 15
@@ -57,11 +63,19 @@ log = logging.getLogger(BOT_NAME)
 # 2. أدوات الاتصال والحالة
 # ═══════════════════════════════════════════════
 
-def send_telegram(msg: str):
+def send_telegram(msg: str, reply_to=None):
+    """إرسال رسالة مع خيار الرد على رسالة سابقة (للحسم التلقائي)"""
     if not TG_TOKEN or not TG_CHAT:
         return None
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
     payload = {"chat_id": TG_CHAT, "text": msg, "parse_mode": "Markdown"}
+    
+    # ★★ الإصلاح 1: إضافة دعم reply_to ★★
+    if reply_to is not None:
+        try:
+            payload["reply_to_message_id"] = int(reply_to)
+        except (ValueError, TypeError):
+            pass
 
     for attempt in range(3):
         try:
@@ -84,9 +98,9 @@ class StateManager:
     def __init__(self, filepath: str):
         self.filepath = Path(filepath)
         self.data = {
-            "frozen_pairs": {},
-            "open_trades": [],
-            "trade_history": []
+            "frozen_pairs": {},      # {symbol: freeze_until_iso}
+            "open_trades": [],       # قائمة الصفقات المفتوحة
+            "trade_history": []      # أرشيف النتائج
         }
         self.load()
 
@@ -105,14 +119,13 @@ class StateManager:
             self.save()
 
     def save(self):
+        """★★ الإصلاح 3: حفظ ذرّي آمن وموحد ★★"""
         try:
             tmp = self.filepath.with_suffix('.tmp')
             with open(tmp, 'w', encoding='utf-8') as f:
                 json.dump(self.data, f, indent=2, default=str)
-            if self.filepath.exists():
-                os.replace(str(tmp), str(self.filepath))
-            else:
-                tmp.rename(self.filepath)
+            # os.replace يعمل بأمان سواء كان الملف موجوداً أم لا
+            os.replace(str(tmp), str(self.filepath))
         except Exception as e:
             log.critical(f"STATE SAVE CRITICAL FAILURE: {e}")
 
@@ -130,12 +143,23 @@ class StateManager:
             log.error(f"Error checking freeze for {symbol}: {e}")
             return False
 
-    def freeze_pair(self, symbol: str, duration_minutes: int = FREEZE_DURATION_MINUTES):
+    def freeze_pair(self, symbol: str, base_time: datetime, duration_minutes: int = FREEZE_DURATION_MINUTES):
+        """
+        ★★ الإصلاح 2: تجميد الزوج بناءً على وقت إغلاق الشمعة (base_time) ★★
+        بدلاً من وقت النظام الحالي، نستخدم وقت الشمعة التي أرسلنا إشارتها.
+        هذا يضمن أن الزوج يتحرر تماماً عند إغلاق شمعة الخروج التالية.
+        """
+        # وقت التحرر = وقت إغلاق الشمعة الحالية + مدة الصفقة
+        release_time = base_time + timedelta(minutes=duration_minutes)
+        
+        # التأكد من أن وقت التحرر مستقبلي (حماية من تأخر النبضة)
         now_utc = datetime.now(timezone.utc)
-        freeze_until = now_utc + timedelta(minutes=duration_minutes)
-        self.data["frozen_pairs"][symbol] = freeze_until.isoformat()
+        if release_time <= now_utc:
+            release_time = now_utc + timedelta(minutes=1) # حد أدنى دقيقة واحدة
+            
+        self.data["frozen_pairs"][symbol] = release_time.isoformat()
         self.save()
-        log.info(f"Frozen {symbol} until {freeze_until.strftime('%H:%M:%S')} UTC")
+        log.info(f"Frozen {symbol} until {release_time.strftime('%H:%M:%S')} UTC (based on candle close)")
 
     def add_open_trade(self, trade):
         self.data["open_trades"].append(trade)
@@ -150,7 +174,6 @@ class StateManager:
         if len(self.data["trade_history"]) > 2000:
             self.data["trade_history"] = self.data["trade_history"][-2000:]
         self.save()
-
 
 # ═══════════════════════════════════════════════
 # 3. محرك البيانات
@@ -169,6 +192,7 @@ def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
         df = df[~df.index.duplicated()].sort_index().dropna()
 
         now_utc = pd.Timestamp.now(tz="UTC")
+        # حذف الشمعة الجارية
         if not df.empty and df.index[-1] + pd.Timedelta(minutes=15) > now_utc:
             df = df.iloc[:-1]
 
@@ -214,7 +238,7 @@ def analyze_market(symbol: str):
             "symbol": symbol,
             "type": signal_type,
             "price": price,
-            "time": candle_time,
+            "time": candle_time, # وقت إغلاق الشمعة
             "ema_200": ema_200,
             "bb_level": bb_lower if signal_type == "CALL" else bb_upper
         }
@@ -222,7 +246,7 @@ def analyze_market(symbol: str):
 
 
 # ═══════════════════════════════════════════════
-# 4. نظام الحسم التلقائي (بعد 15 دقيقة)
+# 4. نظام الحسم التلقائي
 # ═══════════════════════════════════════════════
 
 def resolve_pending_trades(sm: StateManager):
@@ -241,8 +265,12 @@ def resolve_pending_trades(sm: StateManager):
             if entry_time.tzinfo is None:
                 entry_time = entry_time.replace(tzinfo=timezone.utc)
 
+            # وقت خروج الشمعة هو نفس وقت الدخول (لأننا نحسب من الإغلاق)
+            # لكن للحسم نحتاج سعر إغلاق الشمعة التالية (بعد 15 دقيقة)
             exit_target = entry_time + timedelta(minutes=TRADE_DURATION_MINUTES)
-            check_time = exit_target + timedelta(minutes=1)
+            
+            # ننتظر دقيقتين بعد الهدف لضمان تحديث البيانات
+            check_time = exit_target + timedelta(minutes=2)
 
             if now_utc >= check_time:
                 log.info(f"Resolving trade for {trade['symbol']} entered at {entry_time}")
@@ -251,6 +279,7 @@ def resolve_pending_trades(sm: StateManager):
                 if df is None:
                     continue
 
+                # البحث عن شمعة الخروج
                 future_candles = df[df.index >= exit_target]
                 exit_price = None
 
@@ -267,9 +296,10 @@ def resolve_pending_trades(sm: StateManager):
                         is_win = True
 
                     emoji = "✅ ربح" if is_win else "❌ خسارة"
-                    pips_diff = (exit_price - trade['entry_price']) * 10000
-                    if "JPY" in trade['symbol']:
-                        pips_diff = (exit_price - trade['entry_price']) * 100
+                    
+                    # حساب النقاط بدقة
+                    pip_mult = 100.0 if "JPY" in trade['symbol'] else 10000.0
+                    pips_diff = abs(exit_price - trade['entry_price']) * pip_mult
 
                     result_msg = (f"{emoji} *نتيجة M15: {trade['symbol']}*\n"
                                   f"الاتجاه: `{trade['type']}`\n"
@@ -277,7 +307,9 @@ def resolve_pending_trades(sm: StateManager):
                                   f"الخروج: `{exit_price:.5f}`\n"
                                   f"الفرق: `{pips_diff:+.1f} نقطة`")
 
-                    send_telegram(result_msg)
+                    # ★★ إرسال النتيجة كرد على الرسالة الأصلية ★★
+                    mid_reply = trade.get('msg_id')
+                    send_telegram(result_msg, reply_to=mid_reply)
 
                     sm.archive_trade({
                         "id": trade['id'],
@@ -286,7 +318,7 @@ def resolve_pending_trades(sm: StateManager):
                         "entry_time": trade['entry_time'],
                         "exit_time": now_utc.isoformat(),
                         "win": is_win,
-                        "payout": 0.85
+                        "pips": pips_diff
                     })
 
                     resolved_ids.append(trade['id'])
@@ -311,6 +343,7 @@ def generate_reports(sm: StateManager):
     df_hist = pd.DataFrame(history)
     df_hist['exit_dt'] = pd.to_datetime(df_hist['exit_time'], utc=True)
 
+    # التقرير اليومي (عند 00:05 UTC = 03:05 صباحاً غزة)
     if now_utc.hour == 0 and now_utc.minute < 15:
         today_start = now_utc.replace(hour=0, minute=0, second=0)
         daily_trades = df_hist[df_hist['exit_dt'] >= today_start]
@@ -335,7 +368,7 @@ def generate_reports(sm: StateManager):
 
 def main():
     log.info("=" * 50)
-    log.info(f"STARTING {BOT_NAME} | FREEZE & RESOLVE MODE")
+    log.info(f"STARTING {BOT_NAME} | FIXED & GAZA TIME")
     log.info(f"Current UTC Time: {datetime.now(timezone.utc).strftime('%H:%M:%S')}")
     log.info("=" * 50)
 
@@ -345,26 +378,31 @@ def main():
 
     sm = StateManager(STATE_FILE)
 
+    # 1. الحسم التلقائي أولاً
     resolve_pending_trades(sm)
 
+    # 2. التقارير
     generate_reports(sm)
 
+    # 3. فلتر الوقت (بتوقيت غزة المحلي)
     now_utc = datetime.now(timezone.utc)
-    current_hour = now_utc.hour
+    hebron_tz = timezone(timedelta(hours=3))
+    local_now = now_utc.astimezone(hebron_tz)
 
     if now_utc.weekday() >= 5:
         log.info("Weekend. Skipping signals.")
         return
 
-    if current_hour < ACTIVE_HOURS_START or current_hour >= ACTIVE_HOURS_END:
-        log.info(f"Outside active hours ({current_hour}:00 UTC). Skipping signals.")
+    # التحقق من ساعات العمل باستخدام التوقيت المحلي لغزة
+    if local_now.hour < ACTIVE_HOURS_START or local_now.hour >= ACTIVE_HOURS_END:
+        log.info(f"Outside active hours ({local_now.strftime('%H:%M')} Gaza Time). Skipping signals.")
         return
 
     signals_found = 0
 
     for sym in TRADING_SYMBOLS:
         if sm.is_frozen(sym):
-            log.info(f"{sym} is frozen. Skipping.")
+            log.debug(f"{sym} is frozen. Skipping.")
             continue
 
         result = analyze_market(sym)
@@ -375,21 +413,22 @@ def main():
             arrow = "🟢 CALL (صعود)" if result['type'] == "CALL" else "🔴 PUT (هبوط)"
             expiry_time = (result['time'] + timedelta(minutes=15)).strftime("%H:%M")
 
-            msg = (f"* إشارة M15 BOLLINGER TREND REVERSAL*\n\n"
-                   f" *الزوج:* `{result['symbol']}`\n"
+            msg = (f"*🎯 إشارة M15 BOLLINGER TREND REVERSAL*\n\n"
+                   f"📊 *الزوج:* `{result['symbol']}`\n"
                    f"📈 *الاتجاه:* {arrow}\n"
                    f"💰 *السعر الحالي:* `{result['price']:.5f}`\n\n"
                    f"🎯 *منطقة الدخول:* لمس البولنجر باندز\n"
-                   f"🏷️ *فلتر الاتجاه (EMA200):* {'أعلى' if result['type'] == 'CALL' else 'أسفل'} المتوسط\n\n"
+                   f"🏷️ *فلتر الاتجاه (EMA200):* {'أعلى' if result['type']=='CALL' else 'أسفل'} المتوسط\n\n"
                    f"⏱️ *التعليمات:*\n"
-                   f"✅ ادخل فوراً (فرصة إحصائية عالية)\n\n"
+                   f"✅ ادخل فوراُ (فرصة إحصائية عالية)\n\n"
                    f"⌛ *انتهاء الشمعة:* {expiry_time} UTC\n"
                    f"💰 *شرط الـ payout:* 85% فأعلى فقط\n\n"
                    f"📝 *ملاحظة:* استراتيجية M15 BB + EMA200 (Z-Score 3.37)")
 
             mid = send_telegram(msg)
             if mid:
-                sm.freeze_pair(sym, FREEZE_DURATION_MINUTES)
+                # ★★ تمرير وقت إغلاق الشمعة (result['time']) للدالة freeze_pair ★★
+                sm.freeze_pair(sym, base_time=result['time'])
 
                 sm.add_open_trade({
                     "id": str(uuid.uuid4())[:8],
@@ -409,7 +448,7 @@ def main():
     if signals_found == 0:
         log.info("No valid setups found in this cycle.")
     else:
-        log.info(f"Cycle complete. {signals_found} signals processed.")
+        log.info(f"Cycle complete. {signals_found} new signals sent.")
 
 
 if __name__ == "__main__":
