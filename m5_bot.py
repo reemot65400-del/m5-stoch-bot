@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - FIXED & GAZA TIME v3.3 (Signal Counter Added)
+M15 Bollinger Trend Reversal Bot - FIXED & GAZA TIME v3.4 (Night Ban Adjusted to Midnight)
 الإصلاحات النهائية:
 1. حل جذري لمشكلة عدم وصول رسائل الحسم (تحسين منطق البحث عن شمعة الخروج).
 2. دعم reply_to في رسائل الحسم (ربط النتيجة بالإشارة).
 3. تصحيح منطق التجميد ليرتبط بوقت إغلاق الشمعة (يمنع تفويت الفرص).
-4. تعديل ساعات العمل لتبدأ الساعة 9 صباحاُ بتوقيت غزة (06:00 UTC).
+4. ★★ تعديل ساعات العمل: الحظر يبدأ منتصف الليل (00:00 غزة) وينتهي 9 صباحاً (09:00 غزة) ★★
 5. حفظ ذرّي آمن للملفات.
-6. ★★ إضافة عداد يومي للإشارات + وقت الوصول في نص الرسالة ★★
+6. إضافة عداد يومي للإشارات + وقت الوصول في نص الرسالة.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -28,7 +28,7 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_Fixed_Gaza_v3_3"
+BOT_NAME = "M15_BB_Sniper_Fixed_Gaza_v3_4"
 STATE_FILE = "state_m15_fixed_gaza.json" 
 LOG_LEVEL = logging.INFO
 
@@ -43,10 +43,10 @@ BB_PERIOD = 15
 BB_STD_DEV = 2.3
 EMA_TREND_PERIOD = 200
 
-# ★★ التعديل الجوهري: توقيت غزة المحلي (UTC+3) ★★
-# 9 صباحاُ غزة = 06:00 UTC | 21 مساءً غزة = 18:00 UTC
-ACTIVE_HOURS_START = 6   # 06:00 UTC (9 AM Gaza)
-ACTIVE_HOURS_END = 18    # 18:00 UTC (9 PM Gaza)
+# ★★ التعديل الجوهري الجديد: توقيت غزة المحلي (UTC+3) ★★
+# 9 صباحاُ غزة = 06:00 UTC | 12 منتصف الليل غزة = 21:00 UTC
+ACTIVE_HOURS_START = 6   # 06:00 UTC (9 AM Gaza) -> يبدأ العمل
+ACTIVE_HOURS_END = 21    # 21:00 UTC (12 Midnight Gaza) -> ينتهي العمل ويبدأ الحظر
 
 FREEZE_DURATION_MINUTES = 15
 TRADE_DURATION_MINUTES = 15
@@ -137,7 +137,7 @@ class StateManager:
         """يعيد رقم الإشارة التالي ويحدث العداد تلقائياُ عند تغيير اليوم"""
         today_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         
-        # إذا كان التاريخ مختلفاً، نعيد ضبط العداد لليوم الجديد
+        # إذا كان التاريخ مختلفاُ، نعيد ضبط العداد لليوم الجديد
         if self.data.get("daily_counter_date") != today_str:
             self.data["daily_counter_date"] = today_str
             self.data["daily_signal_count"] = 0
