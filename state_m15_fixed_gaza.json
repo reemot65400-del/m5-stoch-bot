@@ -6,24 +6,7 @@
     "EURUSD=X": "2026-10-16T16:30:00+00:00",
     "EURJPY=X": "2026-10-16T16:30:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "a5b7a8a3",
-      "symbol": "EURUSD=X",
-      "type": "CALL",
-      "entry_price": 1.1228384971618652,
-      "entry_time": "2026-10-16T16:00:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "2cf488a0",
-      "symbol": "EURJPY=X",
-      "type": "CALL",
-      "entry_price": 177.3979949951172,
-      "entry_time": "2026-10-16T16:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -78,6 +61,24 @@
       "exit_time": "2026-10-16T16:20:38.614701+00:00",
       "win": false,
       "pips": 5.10101318359375
+    },
+    {
+      "id": "a5b7a8a3",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T16:00:00+00:00",
+      "exit_time": "2026-10-16T16:35:34.146360+00:00",
+      "win": false,
+      "pips": 1.2600421905517578
+    },
+    {
+      "id": "2cf488a0",
+      "symbol": "EURJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T16:00:00+00:00",
+      "exit_time": "2026-10-16T16:35:34.146360+00:00",
+      "win": true,
+      "pips": 10.0006103515625
     }
   ],
   "daily_counter_date": "2026-10-16",
