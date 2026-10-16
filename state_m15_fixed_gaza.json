@@ -1,7 +1,8 @@
 {
   "frozen_pairs": {
     "USDJPY=X": "2026-10-16T08:00:00+00:00",
-    "NZDJPY=X": "2026-10-16T13:00:00+00:00"
+    "NZDJPY=X": "2026-10-16T13:15:00+00:00",
+    "NZDUSD=X": "2026-10-16T13:15:00+00:00"
   },
   "open_trades": [
     {
@@ -10,6 +11,22 @@
       "type": "CALL",
       "entry_price": 89.38899993896484,
       "entry_time": "2026-10-16T12:30:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "4b1543f1",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.5655788779258728,
+      "entry_time": "2026-10-16T12:45:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "1d9719a3",
+      "symbol": "NZDJPY=X",
+      "type": "CALL",
+      "entry_price": 89.35099792480469,
+      "entry_time": "2026-10-16T12:45:00+00:00",
       "msg_id": true
     }
   ],
@@ -25,5 +42,5 @@
     }
   ],
   "daily_counter_date": "2026-10-16",
-  "daily_signal_count": 2
+  "daily_signal_count": 4
 }
