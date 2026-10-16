@@ -35,7 +35,7 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_Fixed_Gaza_v3_8"
+BOT_NAME = "M15_BB_Sniper_Fixed_Gaza_v3_8_1"
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -506,7 +506,8 @@ def main():
         arrival_time_gaza = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=3))).strftime("%H:%M")
 
         arrow = "🟢 CALL (صعود)" if result['type'] == "CALL" else "🔴 PUT (هبوط)"
-        expiry_time = (result['time'] + timedelta(minutes=15)).strftime("%H:%M")
+        # الصفقة تدخل عند إغلاق شمعة الإشارة (time + 15) وتنتهي بعد 15 دقيقة أخرى
+        expiry_time = (result['time'] + timedelta(minutes=TRADE_DURATION_MINUTES * 2)).strftime("%H:%M")
 
         msg = (f"*🎯 إشارة M15 BOLLINGER TREND REVERSAL #{signal_num}*\n\n"
                f"📊 *الزوج:* `{result['symbol']}`\n"
@@ -516,7 +517,7 @@ def main():
                f"🏷️ *فلتر الاتجاه (EMA200):* {'أعلى' if result['type']=='CALL' else 'أسفل'} المتوسط\n\n"
                f"⏱️ *التعليمات:*\n"
                f"✅ ادخل فوراُ (فرصة إحصائية عالية)\n\n"
-               f"⌛ *انتهاء الشمعة:* {expiry_time} UTC\n"
+               f"⌛ *انتهاء الصفقة:* {expiry_time} UTC\n"
                f"💰 *شرط الـ payout:* 85% فأعلى فقط\n\n"
                f"🕒 *وقت وصول الإشارة:* {arrival_time_gaza} (غزة)\n"
                f"📝 *ملاحظة:* استراتيجية M15 BB + EMA200 (Z-Score 3.37)")
@@ -549,6 +550,9 @@ def main():
             log.info("No valid setups found in this cycle. No pair even near a setup (check data feeds).")
     else:
         log.info(f"Cycle complete. {signals_found} new signals sent.")
+
+    # ★★ تحقق نهائي: ما الذي سيتم دفعه للمستودع الآن؟ ★★
+    sm.log_summary()
 
 
 if __name__ == "__main__":
