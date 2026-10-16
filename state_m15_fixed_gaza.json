@@ -6,14 +6,6 @@
   },
   "open_trades": [
     {
-      "id": "c8cb1d39",
-      "symbol": "NZDJPY=X",
-      "type": "CALL",
-      "entry_price": 89.38899993896484,
-      "entry_time": "2026-10-16T12:30:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "4b1543f1",
       "symbol": "NZDUSD=X",
       "type": "CALL",
@@ -39,6 +31,15 @@
       "exit_time": "2026-10-16T08:05:33.180339+00:00",
       "win": true,
       "pips": 1.49993896484375
+    },
+    {
+      "id": "c8cb1d39",
+      "symbol": "NZDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T12:30:00+00:00",
+      "exit_time": "2026-10-16T13:05:33.178967+00:00",
+      "win": false,
+      "pips": 3.800201416015625
     }
   ],
   "daily_counter_date": "2026-10-16",
