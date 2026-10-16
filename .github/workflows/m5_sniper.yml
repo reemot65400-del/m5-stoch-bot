@@ -1,56 +1,49 @@
-name: M15 BB Sniper Bot (State Persistent v3.7)
+name: M15 BB Sniper Bot (State Persistent v3.9 - FINAL)
 
 on:
-  # 1. التشغيل اليدوي (للتجربة الفورية الآن الساعة 8:33 مساءً)
-  workflow_dispatch: 
-  
-  # 2. الجدولة الزمنية (كل 5 دقائق لضمان التقاط نافذة الحسم بدقة)
+  workflow_dispatch:
   schedule:
-    - cron: '*/5 * * * *' 
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write   # ★ ضروري: السماح بدفع Commit الحالة ★
+
+concurrency:
+  group: m15-bot
+  cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    
     steps:
-      # الخطوة 1: سحب الكود من المستودع
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # الخطوة 2: تثبيت بايثون
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.x'
 
-      # الخطوة 3: تثبيت المكتبات المطلوبة
       - name: Install dependencies
-        run: |
-          pip install yfinance pandas numpy requests
+        run: pip install yfinance pandas numpy requests
 
-      # ★★ الخطوة 4 (الأهم): استعادة الحالة السابقة من الكاش ★★
-      # هذا يخبر GitHub: "إذا كان هناك ملف حالة محفوظ سابقاً، أعطني إياه قبل تشغيل البوت"
-      - name: Restore previous state cache
-        uses: actions/cache@v4
-        id: restore-cache
-        with:
-          path: state_m15_fixed_gaza.json  # ← يجب أن يطابق STATE_FILE في كود البوت
-          key: m15-bot-state-${{ github.run_id }} # مفتاح فريد لكل عملية تشغيل جديدة
-          restore-keys: |
-            m15-bot-state-                  # إذا لم يجد المفتاح الدقيق، يبحث عن أحدث نسخة عامة
-
-      # الخطوة 5: تشغيل البوت
       - name: Run M15 Bot Script
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ secrets.TG_CHAT }}
-        run: python m5_bot.py  # ← تأكد أن اسم الملف هنا هو m5_bot.py وليس h1_bot.py
+        run: python m5_bot.py
 
-      # ★★ الخطوة 6 (الحاسمة): حفظ الحالة الجديدة للكاش ★★
-      # بعد انتهاء البوت، نقوم بتحديث الكاش بالملف الجديد الذي يحتوي على الصفقات المفتوحة والنتائج المحسومة
-      - name: Save current state to cache
-        if: always() # حتى لو فشل البوت أو حدث خطأ، نحاول حفظ ما تم إنجازه
-        uses: actions/cache/save@v4
-        with:
-          path: state_m15_fixed_gaza.json
-          key: m15-bot-state-${{ github.run_id }}
+      # ★★ الحل الجوهري: الحالة تُحفظ كـ Commit في المستودع (بديل حتمي عن actions/cache) ★★
+      - name: Persist bot state (commit & push)
+        if: always()
+        run: |
+          git config user.name "m15-bot"
+          git config user.email "m15-bot@users.noreply.github.com"
+          git add state_m15_fixed_gaza.json
+          if git diff --cached --quiet; then
+            echo ">>> State unchanged."
+          else
+            git commit -m "chore: persist bot state [skip ci]"
+            git push origin HEAD:${{ github.ref_name }}
+            echo ">>> State pushed to repository successfully."
+          fi
