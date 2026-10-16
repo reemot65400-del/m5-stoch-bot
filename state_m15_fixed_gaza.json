@@ -1,7 +1,18 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "USDJPY=X": "2026-10-16T08:00:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "c186d25b",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_price": 158.01100158691406,
+      "entry_time": "2026-10-16T07:30:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [],
-  "daily_counter_date": "",
-  "daily_signal_count": 0
+  "daily_counter_date": "2026-10-16",
+  "daily_signal_count": 1
 }
