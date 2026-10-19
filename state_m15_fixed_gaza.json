@@ -11,16 +11,7 @@
     "GBPUSD=X": "2026-10-19T08:15:00+00:00",
     "EURGBP=X": "2026-10-19T15:45:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "653181ad",
-      "symbol": "EURGBP=X",
-      "type": "PUT",
-      "entry_price": 0.8424800038337708,
-      "entry_time": "2026-10-19T15:15:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -138,6 +129,15 @@
       "exit_time": "2026-10-19T08:20:28.541818+00:00",
       "win": true,
       "pips": 9.570121765136719
+    },
+    {
+      "id": "653181ad",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-19T15:15:00+00:00",
+      "exit_time": "2026-10-19T15:50:07.884012+00:00",
+      "win": false,
+      "pips": 0.6997585296630859
     }
   ],
   "daily_counter_date": "2026-10-19",
