@@ -8,9 +8,19 @@
     "AUDUSD=X": "2026-10-19T06:30:00+00:00",
     "GBPJPY=X": "2026-10-19T07:30:00+00:00",
     "CHFJPY=X": "2026-10-19T07:30:00+00:00",
-    "GBPUSD=X": "2026-10-19T08:15:00+00:00"
+    "GBPUSD=X": "2026-10-19T08:15:00+00:00",
+    "EURGBP=X": "2026-10-19T15:45:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "653181ad",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_price": 0.8424800038337708,
+      "entry_time": "2026-10-19T15:15:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -131,5 +141,5 @@
     }
   ],
   "daily_counter_date": "2026-10-19",
-  "daily_signal_count": 5
+  "daily_signal_count": 6
 }
