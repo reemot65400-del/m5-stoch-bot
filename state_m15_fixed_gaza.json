@@ -14,14 +14,6 @@
   },
   "open_trades": [
     {
-      "id": "396a2ee4",
-      "symbol": "USDCAD=X",
-      "type": "PUT",
-      "entry_price": 1.4104599952697754,
-      "entry_time": "2026-10-19T18:15:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "9ec13b44",
       "symbol": "USDCAD=X",
       "type": "PUT",
@@ -156,6 +148,15 @@
       "exit_time": "2026-10-19T15:50:07.884012+00:00",
       "win": false,
       "pips": 0.6997585296630859
+    },
+    {
+      "id": "396a2ee4",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-19T18:15:00+00:00",
+      "exit_time": "2026-10-19T18:48:53.792070+00:00",
+      "win": false,
+      "pips": 2.8002262115478516
     }
   ],
   "daily_counter_date": "2026-10-19",
