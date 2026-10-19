@@ -10,7 +10,7 @@
     "CHFJPY=X": "2026-10-19T07:30:00+00:00",
     "GBPUSD=X": "2026-10-19T08:15:00+00:00",
     "EURGBP=X": "2026-10-19T15:45:00+00:00",
-    "USDCAD=X": "2026-10-19T18:45:00+00:00"
+    "USDCAD=X": "2026-10-19T19:00:00+00:00"
   },
   "open_trades": [
     {
@@ -19,6 +19,14 @@
       "type": "PUT",
       "entry_price": 1.4104599952697754,
       "entry_time": "2026-10-19T18:15:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "9ec13b44",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_price": 1.4107400178909302,
+      "entry_time": "2026-10-19T18:30:00+00:00",
       "msg_id": true
     }
   ],
@@ -151,5 +159,5 @@
     }
   ],
   "daily_counter_date": "2026-10-19",
-  "daily_signal_count": 7
+  "daily_signal_count": 8
 }
