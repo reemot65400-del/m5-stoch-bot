@@ -4,9 +4,19 @@
     "NZDJPY=X": "2026-10-16T13:15:00+00:00",
     "NZDUSD=X": "2026-10-16T13:15:00+00:00",
     "EURUSD=X": "2026-10-16T16:30:00+00:00",
-    "EURJPY=X": "2026-10-16T16:30:00+00:00"
+    "EURJPY=X": "2026-10-16T16:30:00+00:00",
+    "AUDUSD=X": "2026-10-19T06:30:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "ee7db7ab",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.6972528100013733,
+      "entry_time": "2026-10-19T06:00:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -81,6 +91,6 @@
       "pips": 10.0006103515625
     }
   ],
-  "daily_counter_date": "2026-10-16",
-  "daily_signal_count": 8
+  "daily_counter_date": "2026-10-19",
+  "daily_signal_count": 1
 }
