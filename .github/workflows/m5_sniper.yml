@@ -1,4 +1,4 @@
-name: M15 BB Sniper Bot (State Persistent v3.9 - FINAL)
+name: M15 BB Sniper Bot (State Persistent v4.0 - PRO)
 
 on:
   workflow_dispatch:
@@ -9,40 +9,53 @@ permissions:
   contents: write
 
 concurrency:
-  group: m15-bot
+  group: m15-bot-state-group
   cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
+          python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install yfinance pandas numpy requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install yfinance pandas numpy requests tzdata
 
       - name: Run M15 Bot Script
         env:
+          PYTHONUNBUFFERED: "1"
+          TZ: "Asia/Gaza"
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ secrets.TG_CHAT }}
-        run: python m5_bot.py  # تأكد أن هذا الاسم يطابق اسم ملفك في GitHub
+        run: python m5_bot.py
 
-      - name: Persist bot state (commit & push)
+      - name: Persist bot state (Safe Pull, Commit & Push)
         if: always()
         run: |
           git config user.name "m15-bot"
           git config user.email "m15-bot@users.noreply.github.com"
-          git add state_m15_fixed_gaza.json
+          
+          if [ -f "state_m15_fixed_gaza.json" ]; then
+            git add state_m15_fixed_gaza.json
+          fi
+
           if git diff --cached --quiet; then
-            echo ">>> State unchanged."
+            echo ">>> State unchanged. Nothing to commit."
           else
             git commit -m "chore: persist bot state [skip ci]"
+            git pull --rebase --autostash origin ${{ github.ref_name }}
             git push origin HEAD:${{ github.ref_name }}
             echo ">>> State pushed to repository successfully."
           fi
