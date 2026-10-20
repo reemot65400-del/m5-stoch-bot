@@ -6,7 +6,7 @@ on:
     - cron: '*/5 * * * *'
 
 permissions:
-  contents: write   # ★ ضروري: السماح بدفع Commit الحالة ★
+  contents: write
 
 concurrency:
   group: m15-bot
@@ -31,9 +31,8 @@ jobs:
         env:
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ secrets.TG_CHAT }}
-        run: python m5_bot.py
+        run: python m5_bot.py  # تأكد أن هذا الاسم يطابق اسم ملفك في GitHub
 
-      # ★★ الحل الجوهري: الحالة تُحفظ كـ Commit في المستودع (بديل حتمي عن actions/cache) ★★
       - name: Persist bot state (commit & push)
         if: always()
         run: |
