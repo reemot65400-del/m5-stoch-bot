@@ -1,16 +1,24 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.0 (Zero-Bug Production Release)
+M15 Bollinger Trend Reversal Bot - v4.1 (Guaranteed-Reports Release)
 الإصلاحات الهندسية الجذرية في v4.0:
 1. إصلاح خطأ KeyError: 'wr' القاتل في إحصائيات الأيام الذي كان يمنع إرسال التقرير.
 2. إصلاح حساب صافي النقاط (Signed Pips) للأزواج والشرائح (طرح الخسائر بدلاً من جمعها).
 3. إزالة شرط (minute < 15) لضمان إرسال التقرير بعد الساعة 12 ليلاً حتى لو تأخر GitHub Actions.
 4. استخدام المنطقة الزمنية الديناميكية (Asia/Gaza) لضبط التوقيت الصيفي والشتوي تلقائياً.
 5. عدم تسجيل التقرير كـ "مُرسل" إلا بعد تأكيد استلام تليجرام للرسالة (200 OK).
-6. إرسال تقرير تأكيدي حتى لو لم تكن هناك صفقات في اليوم السابق للاطمئنان على عمل البوت.
-7. الحفاظ التام (100%) على منطق الاستراتيجية (analyze_market).
+8. ★★ v4.1 (إصلاح جذري للتقارير): إزالة قيد الساعة بالكامل من التقارير الثلاثة —
+   التقرير يُحاول في كل نبضة طوال يوم الاستحقاق حتى ينجح الإرسال (ضمانة تشغيلية
+   ضد تأخر GitHub وتعطل Telegram لحظيًا)، ويبقى مانع التكرار last_*_report هو الوحيد.
+9. توحيد سلوك الفراغ: التقارير الثلاثة ترسل رسالة "لم تُسجَّل صفقات" بدل الصمت
+   (كان الأسبوعي والشهري يسجّلان "مُرسل" دون إرسال — صمت تام).
+10. تواريخ عربية واضحة في التقارير: "الثلاثاء 20 أكتوبر 2026" / "الأسبوع 42 (...)"
+    عبر dayofweek وقاموس عربي (بلا اعتماد على لغة الخادم).
+11. Zero-Crash إضافي: حماية من الأعمدة الناقصة في الأرشيف القديم + قيم NaN
+    في ساعة/يوم التحليل.
 """
+import os
 import os
 import sys
 import time
@@ -36,7 +44,7 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_0_Pro"
+BOT_NAME = "M15_BB_Sniper_v4_1_Pro"
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -373,12 +381,27 @@ def resolve_pending_trades(sm: StateManager):
 # 5. نظام التقارير المتقدم (Zero-Bug & Guaranteed Delivery)
 # ═══════════════════════════════════════════════
 
+AR_MONTHS = {
+    "01": "يناير", "02": "فبراير", "03": "مارس", "04": "أبريل",
+    "05": "مايو", "06": "يونيو", "07": "يوليو", "08": "أغسطس",
+    "09": "سبتمبر", "10": "أكتوبر", "11": "نوفمبر", "12": "ديسمبر"
+}
+AR_DAYS = {0: 'الاثنين', 1: 'الثلاثاء', 2: 'الأربعاء', 3: 'الخميس',
+           4: 'الجمعة', 5: 'السبت', 6: 'الأحد'}
+
+
+def ar_month_name(dt: datetime) -> str:
+    """اسم الشهر العربي دائمًا — بلا اعتماد على لغة الخادم"""
+    return AR_MONTHS.get(dt.strftime("%m"), dt.strftime("%B"))
+
+
 def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -> bool:
+    """يرسل التقرير ويعيد True فقط إذا استلم تليجرام الرسالة فعلاً (200 OK)"""
     if df is None or df.empty:
         msg = (
             f"*📊 التقرير {report_type} ({period_name})*\n\n"
             f"📈 *إجمالي الصفقات:* `0`\n"
-            f"ℹ️ _لم يتم تسجيل أو إغلاق أي صفقات خلال هذه الفترة._\n\n"
+            f"ℹ️ _لم تُسجَّل صفقات خلال هذه الفترة._\n\n"
             f"_البوت يعمل بكفاءة ويراقب السوق بانتظام!_"
         )
         sent = send_telegram(msg)
@@ -387,9 +410,22 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         return sent
 
     df = df.copy()
+
+    # ★★ v4.1 Zero-Crash: حماية من الأعمدة الناقصة في أرشيف قديم ★★
+    if 'id' not in df.columns:
+        df['id'] = [f"row{i}" for i in range(len(df))]
+    if 'symbol' not in df.columns:
+        df['symbol'] = 'UNKNOWN'
+    if 'win' not in df.columns:
+        df['win'] = None
+    if 'pips' not in df.columns:
+        df['pips'] = 0.0
+    if 'exit_dt_gaza' not in df.columns:
+        df['exit_dt_gaza'] = pd.NaT
+
     df['pips'] = pd.to_numeric(df['pips'], errors='coerce').fillna(0.0)
 
-    # حساب النقاط الموجهة (موجب للربح، سالب للخسارة، صفر للاغي)
+    # النقاط الموجّهة: موجب ربح، سالب خسارة، صفر لاغي
     df['signed_pips'] = np.where(
         df['win'] == True, df['pips'],
         np.where(df['win'] == False, -df['pips'], 0.0)
@@ -404,7 +440,7 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
     wr = (wins / valid_trades * 100.0) if valid_trades > 0 else 0.0
     net_pips = float(df['signed_pips'].sum())
 
-    # 1. أفضل وأسوأ زوج (مع حماية ضد القسمة على صفر)
+    # 1. أفضل/أسوأ زوج (محصّن ضد القسمة على صفر)
     pair_stats = df.groupby('symbol', as_index=False).agg(
         trades=('id', 'count'),
         wins=('win', lambda x: int((x == True).sum())),
@@ -412,7 +448,8 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         pips=('signed_pips', 'sum')
     )
     pair_stats['valid'] = pair_stats['wins'] + pair_stats['losses']
-    pair_stats['wr'] = np.where(pair_stats['valid'] > 0, (pair_stats['wins'] / pair_stats['valid']) * 100.0, 0.0)
+    pair_stats['wr'] = np.where(pair_stats['valid'] > 0,
+                                (pair_stats['wins'] / pair_stats['valid']) * 100.0, 0.0)
 
     valid_pairs = pair_stats[pair_stats['trades'] >= 2]
     if valid_pairs.empty:
@@ -427,43 +464,45 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         best_pair_txt = "غير متاح"
         worst_pair_txt = "غير متاح"
 
-    # 2. أفضل وقت (ساعة) بتوقيت غزة
-    df['gaza_hour'] = df['exit_dt_gaza'].dt.hour
-    time_stats = df.groupby('gaza_hour', as_index=False).agg(
+    # 2. أفضل وقت (ساعة) بتوقيت غزة — v4.1: حماية من NaN
+    hour_src = df['exit_dt_gaza'].dt.hour
+    time_stats = df.assign(gaza_hour=hour_src).dropna(subset=['gaza_hour']).groupby('gaza_hour', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
         losses=('win', lambda x: int((x == False).sum())),
         total=('id', 'count')
     )
     time_stats['valid'] = time_stats['wins'] + time_stats['losses']
-    time_stats['wr'] = np.where(time_stats['valid'] > 0, (time_stats['wins'] / time_stats['valid']) * 100.0, 0.0)
+    time_stats['wr'] = np.where(time_stats['valid'] > 0,
+                                (time_stats['wins'] / time_stats['valid']) * 100.0, 0.0)
     valid_times = time_stats[time_stats['total'] >= 2]
     if valid_times.empty:
         valid_times = time_stats[time_stats['total'] >= 1]
 
+    best_time_txt = "غير متاح"
     if not valid_times.empty:
-        best_hour = int(valid_times.loc[valid_times['wr'].idxmax()]['gaza_hour'])
-        best_time_txt = f"🕒 {best_hour:02d}:00 - {(best_hour + 1) % 24:02d}:00 بتوقيت غزة"
-    else:
-        best_time_txt = "غير متاح"
+        best_hour = valid_times.loc[valid_times['wr'].idxmax()]['gaza_hour']
+        if pd.notna(best_hour):
+            best_hour = int(best_hour)
+            best_time_txt = f"🕒 {best_hour:02d}:00 - {(best_hour + 1) % 24:02d}:00 بتوقيت غزة"
 
-    # 3. أفضل يوم (تم إصلاح KeyError: 'wr' هنا)
-    day_map = {0: 'الاثنين', 1: 'الثلاثاء', 2: 'الأربعاء', 3: 'الخميس', 4: 'الجمعة', 5: 'السبت', 6: 'الأحد'}
-    df['gaza_day_ar'] = df['exit_dt_gaza'].dt.dayofweek.map(day_map)
-    day_stats = df.groupby('gaza_day_ar', as_index=False).agg(
+    # 3. أفضل يوم (إصلاح KeyError: 'wr' محفوظ من v4.0)
+    day_src = df['exit_dt_gaza'].dt.dayofweek
+    day_stats = df.assign(gaza_day_ar=day_src.dropna().map(lambda i: AR_DAYS.get(int(i), 'غير معروف')))\
+        .dropna(subset=['gaza_day_ar']).groupby('gaza_day_ar', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
         losses=('win', lambda x: int((x == False).sum())),
         total=('id', 'count')
     )
     day_stats['valid'] = day_stats['wins'] + day_stats['losses']
-    day_stats['wr'] = np.where(day_stats['valid'] > 0, (day_stats['wins'] / day_stats['valid']) * 100.0, 0.0)
+    day_stats['wr'] = np.where(day_stats['valid'] > 0,
+                               (day_stats['wins'] / day_stats['valid']) * 100.0, 0.0)
     valid_days = day_stats[day_stats['total'] >= 2]
     if valid_days.empty:
         valid_days = day_stats[day_stats['total'] >= 1]
 
+    best_day_txt = "غير متاح"
     if not valid_days.empty:
         best_day_txt = f"📅 {valid_days.loc[valid_days['wr'].idxmax()]['gaza_day_ar']}"
-    else:
-        best_day_txt = "غير متاح"
 
     # 4. أفضل شريحة (JPY vs غير JPY)
     df['is_jpy'] = df['symbol'].astype(str).str.contains('JPY')
@@ -505,53 +544,76 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
 
 def generate_advanced_reports(sm: StateManager):
+    """
+    ★★ v4.1 — الإصلاح الجذري: ضمانة تشغيلية للتقارير ★★
+    لا يوجد أي قيد hour/minute. التقرير يُحاول في كل نبضة خلال يوم الاستحقاق
+    حتى ينجح الإرسال مرة واحدة فقط (last_*_report يمنع التكرار).
+    """
     local_now = get_gaza_now()
     history = sm.data.get("trade_history", [])
 
     if history:
         df_hist = pd.DataFrame(history)
-        df_hist['exit_dt_gaza'] = pd.to_datetime(df_hist['exit_time'], utc=True, errors='coerce').dt.tz_convert(GAZA_TZ)
-        df_hist = df_hist.dropna(subset=['exit_dt_gaza'])
+        if 'exit_time' in df_hist.columns:
+            df_hist['exit_dt_gaza'] = pd.to_datetime(
+                df_hist['exit_time'], utc=True, errors='coerce').dt.tz_convert(GAZA_TZ)
+            df_hist = df_hist.dropna(subset=['exit_dt_gaza'])
+        else:
+            df_hist = pd.DataFrame()
     else:
         df_hist = pd.DataFrame()
 
-    # 1. التقرير اليومي (يُرسل عند الساعة 00:xx بتوقيت غزة أو في أول تشغيلة بعدها إذا تأخر السيرفر)
-    yesterday_str = (local_now - timedelta(days=1)).strftime("%Y-%m-%d")
-    if local_now.hour == 0 and sm.data.get("last_daily_report") != yesterday_str:
+    # ─── 1. التقرير اليومي: أي نبضة بعد منتصف الليل حتى ينجح الإرسال ───
+    yesterday = local_now - timedelta(days=1)
+    yesterday_str = yesterday.strftime("%Y-%m-%d")
+    daily_period_name = f"{AR_DAYS[yesterday.weekday()]} {yesterday.day} {ar_month_name(yesterday)} {yesterday.year}"
+
+    if sm.data.get("last_daily_report") != yesterday_str:
+        log.info(f"Daily report due for {yesterday_str} — attempting send...")
         if not df_hist.empty:
             daily_df = df_hist[df_hist['exit_dt_gaza'].dt.strftime("%Y-%m-%d") == yesterday_str]
         else:
             daily_df = pd.DataFrame()
 
-        if send_detailed_report(daily_df, "اليومي", yesterday_str):
+        if send_detailed_report(daily_df, "اليومي", daily_period_name):
             sm.data["last_daily_report"] = yesterday_str
             sm.save()
+            log.info(f"Daily report CONFIRMED for {yesterday_str}")
+        else:
+            log.warning("Daily report send failed — will retry on next pulse (guaranteed delivery).")
 
-    # 2. التقرير الأسبوعي (يُرسل فجر الأحد الساعة 00:xx بتوقيت غزة عن الأسبوع المنصرم)
+    # ─── 2. التقرير الأسبوعي: كل نبضات يوم الأحد حتى ينجح ───
     last_week_dt = local_now - timedelta(days=local_now.weekday() + 1)
     last_week_year, last_week_num, _ = last_week_dt.isocalendar()
     last_week_str = f"{last_week_year}-W{last_week_num:02d}"
+    week_start = last_week_dt - timedelta(days=6)
+    weekly_period_name = (f"الأسبوع {last_week_num} "
+                          f"({week_start.day} {ar_month_name(week_start)} – "
+                          f"{last_week_dt.day} {ar_month_name(last_week_dt)} {last_week_dt.year})")
 
-    if local_now.weekday() == 6 and local_now.hour == 0 and sm.data.get("last_weekly_report") != last_week_str:
+    if local_now.weekday() == 6 and sm.data.get("last_weekly_report") != last_week_str:
+        log.info(f"Weekly report due for {last_week_str} — attempting send...")
         if not df_hist.empty:
             iso_cal = df_hist['exit_dt_gaza'].dt.isocalendar()
             weekly_df = df_hist[(iso_cal.year == last_week_year) & (iso_cal.week == last_week_num)]
         else:
             weekly_df = pd.DataFrame()
 
-        if not weekly_df.empty:
-            if send_detailed_report(weekly_df, "الأسبوعي", f"الأسبوع {last_week_num} من {last_week_year}"):
-                sm.data["last_weekly_report"] = last_week_str
-                sm.save()
-        else:
+        # v4.1: وحّد سلوك الفراغ — أرسل رسالة الاطمئنان بدل الصمت
+        if send_detailed_report(weekly_df, "الأسبوعي", weekly_period_name):
             sm.data["last_weekly_report"] = last_week_str
             sm.save()
+            log.info(f"Weekly report CONFIRMED for {last_week_str}")
+        else:
+            log.warning("Weekly report send failed — will retry on next pulse.")
 
-    # 3. التقرير الشهري (يُرسل يوم 1 في الشهر الساعة 00:xx بتوقيت غزة عن الشهر السابق)
+    # ─── 3. التقرير الشهري: كل نبضات يوم 1 حتى ينجح ───
     last_month_dt = local_now.replace(day=1) - timedelta(days=1)
     last_month_str = last_month_dt.strftime("%Y-%m")
+    monthly_period_name = f"{ar_month_name(last_month_dt)} {last_month_dt.year}"
 
-    if local_now.day == 1 and local_now.hour == 0 and sm.data.get("last_monthly_report") != last_month_str:
+    if local_now.day == 1 and sm.data.get("last_monthly_report") != last_month_str:
+        log.info(f"Monthly report due for {last_month_str} — attempting send...")
         if not df_hist.empty:
             monthly_df = df_hist[
                 (df_hist['exit_dt_gaza'].dt.year == last_month_dt.year) &
@@ -560,20 +622,12 @@ def generate_advanced_reports(sm: StateManager):
         else:
             monthly_df = pd.DataFrame()
 
-        month_names_ar = {
-            "01": "يناير", "02": "فبراير", "03": "مارس", "04": "أبريل",
-            "05": "مايو", "06": "يونيو", "07": "يوليو", "08": "أغسطس",
-            "09": "سبتمبر", "10": "أكتوبر", "11": "نوفمبر", "12": "ديسمبر"
-        }
-        month_name_ar = month_names_ar.get(last_month_dt.strftime("%m"), last_month_dt.strftime("%B"))
-
-        if not monthly_df.empty:
-            if send_detailed_report(monthly_df, "الشهري", f"{month_name_ar} {last_month_dt.year}"):
-                sm.data["last_monthly_report"] = last_month_str
-                sm.save()
-        else:
+        if send_detailed_report(monthly_df, "الشهري", monthly_period_name):
             sm.data["last_monthly_report"] = last_month_str
             sm.save()
+            log.info(f"Monthly report CONFIRMED for {last_month_str}")
+        else:
+            log.warning("Monthly report send failed — will retry on next pulse.")
 
 
 # ═══════════════════════════════════════════════
