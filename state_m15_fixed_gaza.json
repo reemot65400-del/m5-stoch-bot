@@ -12,16 +12,7 @@
     "EURGBP=X": "2026-10-19T15:45:00+00:00",
     "USDCAD=X": "2026-10-19T19:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "956cf8db",
-      "symbol": "EURJPY=X",
-      "type": "PUT",
-      "entry_price": 177.4980010986328,
-      "entry_time": "2026-10-20T13:45:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -184,6 +175,15 @@
       "exit_time": "2026-10-20T12:50:39.044559+00:00",
       "win": true,
       "pips": 4.2999267578125
+    },
+    {
+      "id": "956cf8db",
+      "symbol": "EURJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-20T13:45:00+00:00",
+      "exit_time": "2026-10-20T14:18:21.507426+00:00",
+      "win": true,
+      "pips": 2.60009765625
     }
   ],
   "daily_counter_date": "2026-10-20",
