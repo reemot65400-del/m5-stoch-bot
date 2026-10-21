@@ -14,16 +14,7 @@
     "CADJPY=X": "2026-10-21T12:15:00+00:00",
     "AUDJPY=X": "2026-10-21T14:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "0f2d79d1",
-      "symbol": "NZDUSD=X",
-      "type": "CALL",
-      "entry_price": 0.5689576864242554,
-      "entry_time": "2026-10-21T15:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -231,6 +222,15 @@
       "exit_time": "2026-10-21T14:05:30.926877+00:00",
       "win": true,
       "pips": 1.89971923828125
+    },
+    {
+      "id": "0f2d79d1",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T15:00:00+00:00",
+      "exit_time": "2026-10-21T15:35:24.412985+00:00",
+      "win": true,
+      "pips": 4.535317420959473
     }
   ],
   "daily_counter_date": "2026-10-21",
