@@ -13,16 +13,7 @@
     "USDCAD=X": "2026-10-19T19:00:00+00:00",
     "CADJPY=X": "2026-10-21T11:45:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "17284d86",
-      "symbol": "CADJPY=X",
-      "type": "CALL",
-      "entry_price": 112.42900085449219,
-      "entry_time": "2026-10-21T11:15:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -203,6 +194,15 @@
       "exit_time": "2026-10-21T06:35:30.472140+00:00",
       "win": true,
       "pips": 2.1457672119140625
+    },
+    {
+      "id": "17284d86",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T11:15:00+00:00",
+      "exit_time": "2026-10-21T11:50:33.918627+00:00",
+      "win": true,
+      "pips": 2.700042724609375
     }
   ],
   "daily_counter_date": "2026-10-21",
