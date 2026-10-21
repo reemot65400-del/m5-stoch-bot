@@ -3,11 +3,8 @@ name: Strategy Lab Backtest
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  workflow_dispatch: # يسمح بالتشغيل اليدوي من واجهة GitHub
+  workflow_dispatch:
   schedule:
-    # تشغيل يومي في الساعة 00:00 UTC
     - cron: '0 0 * * *'
 
 jobs:
@@ -26,13 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        # جرب تثبيت requirements_v2.txt، وإذا فشل جرب requirements.txt
-        if [ -f requirements_v2.txt ]; then
-          pip install -r requirements_v2.txt
-        else
-          pip install -r requirements.txt
-        fi
-        pip show ta yfinance pandas
+        pip install -r requirements2.txt
 
     - name: Run Strategy Lab
       run: |
