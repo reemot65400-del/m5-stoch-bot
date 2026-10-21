@@ -10,9 +10,19 @@
     "CHFJPY=X": "2026-10-19T07:30:00+00:00",
     "GBPUSD=X": "2026-10-21T06:30:00+00:00",
     "EURGBP=X": "2026-10-19T15:45:00+00:00",
-    "USDCAD=X": "2026-10-19T19:00:00+00:00"
+    "USDCAD=X": "2026-10-19T19:00:00+00:00",
+    "CADJPY=X": "2026-10-21T11:45:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "17284d86",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_price": 112.42900085449219,
+      "entry_time": "2026-10-21T11:15:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -196,7 +206,7 @@
     }
   ],
   "daily_counter_date": "2026-10-21",
-  "daily_signal_count": 1,
+  "daily_signal_count": 2,
   "last_daily_report": "2026-10-20",
   "last_weekly_report": "",
   "last_monthly_report": ""
