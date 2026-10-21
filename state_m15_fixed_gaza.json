@@ -14,16 +14,7 @@
     "CADJPY=X": "2026-10-21T12:15:00+00:00",
     "AUDJPY=X": "2026-10-21T14:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "d2947d69",
-      "symbol": "AUDJPY=X",
-      "type": "CALL",
-      "entry_price": 110.94100189208984,
-      "entry_time": "2026-10-21T13:30:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -222,6 +213,15 @@
       "exit_time": "2026-10-21T12:20:31.360805+00:00",
       "win": true,
       "pips": 2.40020751953125
+    },
+    {
+      "id": "d2947d69",
+      "symbol": "AUDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T13:30:00+00:00",
+      "exit_time": "2026-10-21T14:05:30.926877+00:00",
+      "win": true,
+      "pips": 1.89971923828125
     }
   ],
   "daily_counter_date": "2026-10-21",
