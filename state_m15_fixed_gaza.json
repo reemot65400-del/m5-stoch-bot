@@ -12,16 +12,7 @@
     "EURGBP=X": "2026-10-19T15:45:00+00:00",
     "USDCAD=X": "2026-10-19T19:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "cb0007b8",
-      "symbol": "GBPUSD=X",
-      "type": "CALL",
-      "entry_price": 1.3370771408081055,
-      "entry_time": "2026-10-21T06:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -193,6 +184,15 @@
       "exit_time": "2026-10-20T14:18:21.507426+00:00",
       "win": true,
       "pips": 2.60009765625
+    },
+    {
+      "id": "cb0007b8",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T06:00:00+00:00",
+      "exit_time": "2026-10-21T06:35:30.472140+00:00",
+      "win": true,
+      "pips": 2.1457672119140625
     }
   ],
   "daily_counter_date": "2026-10-21",
