@@ -2,6 +2,7 @@ import yfinance as yf
 import pandas as pd
 import ta
 import warnings
+import time
 warnings.filterwarnings('ignore')
 
 class YahooForexLab:
@@ -12,22 +13,38 @@ class YahooForexLab:
         self.all_results = []
 
     def fetch_and_prepare(self, symbol):
-        try:
-            # تنسيق رمز ياهو فاينانس لأزواج العملات (مثال: EURUSD=X)
-            ticker = symbol if '=' in symbol else f"{symbol}=X"
-            df = yf.download(ticker, interval=self.interval, period=self.period, progress=False)
-            
-            if df.empty or len(df) < 60:
-                return None
+        # تجربة صيغ متعددة للرمز
+        ticker_formats = [
+            symbol,
+            symbol.replace('=X', ''),
+            symbol.replace('=X', '=X')
+        ]
+        
+        for ticker in ticker_formats:
+            try:
+                print(f"جاري تحميل {ticker}...")
+                df = yf.download(
+                    ticker, 
+                    interval=self.interval, 
+                    period=self.period, 
+                    progress=False,
+                    timeout=10
+                )
                 
-            # تسطيح الأعمدة متعددة المؤشرات إذا وجدت (إصدار yfinance الجديد)
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-                
-            df = df[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
-            return df
-        except Exception:
-            return None
+                if df is not None and not df.empty and len(df) >= 60:
+                    # تسطيح الأعمدة متعددة المؤشرات
+                    if isinstance(df.columns, pd.MultiIndex):
+                        df.columns = df.columns.get_level_values(0)
+                    
+                    df = df[['Open', 'High', 'Low', 'Close', 'Volume']].dropna()
+                    print(f"✓ تم تحميل {ticker} بنجاح - {len(df)} شمعة")
+                    return df
+                    
+            except Exception as e:
+                print(f"✗ فشل {ticker}: {e}")
+                time.sleep(2)  # انتظار قبل المحاولة التالية
+        
+        return None
 
     def apply_indicators(self, df):
         df['EMA_50'] = ta.trend.ema_indicator(df['Close'], window=50)
@@ -41,12 +58,11 @@ class YahooForexLab:
 
     def backtest_strategy(self, df):
         trades = []
-        # البدء من 1 وتوقف عند -1 لتجنب الشمعة الحالية غير المغلقة (منع إعادة الرسم)
         for i in range(1, len(df) - 1):
             current = df.iloc[i]
             next_candle = df.iloc[i + 1]
             
-            # شروط CALL (شراء)
+            # شروط CALL
             if (current['Close'] > current['EMA_50'] and 
                 current['Low'] <= current['BB_Lower'] and 
                 current['RSI'] < 30):
@@ -54,7 +70,7 @@ class YahooForexLab:
                 win = 1 if next_candle['Close'] > current['Close'] else 0
                 trades.append({'Type': 'CALL', 'Win': win})
                 
-            # شروط PUT (بيع)
+            # شروط PUT
             elif (current['Close'] < current['EMA_50'] and 
                   current['High'] >= current['BB_Upper'] and 
                   current['RSI'] > 70):
@@ -65,11 +81,12 @@ class YahooForexLab:
         return pd.DataFrame(trades)
 
     def run_lab(self):
-        print(f"بدء اختبار الاستراتيجيات على فريم {self.interval} لـ {len(self.symbols)} أزواج...\n")
+        print(f"بدء اختبار الاستراتيجيات على فريم {self.interval}...\n")
         
         for symbol in self.symbols:
             df = self.fetch_and_prepare(symbol)
             if df is None:
+                print(f"⚠ تخطي {symbol} - لا توجد بيانات")
                 continue
                 
             df = self.apply_indicators(df)
@@ -93,7 +110,7 @@ class YahooForexLab:
         return pd.DataFrame(self.all_results)
 
 if __name__ == "__main__":
-    # قائمة بـ 9 أزواج عملات رئيسية بصيغة ياهو فاينانس
+    # أزواج العملات بصيغ بديلة
     forex_pairs = [
         "EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X", 
         "AUDUSD=X", "USDCAD=X", "NZDUSD=X", "EURJPY=X", "GBPJPY=X"
@@ -103,12 +120,11 @@ if __name__ == "__main__":
     results_df = lab.run_lab()
     
     if not results_df.empty:
-        # ترتيب النتائج تنازلياً حسب نسبة النجاح
         results_df = results_df.sort_values(by='Win Rate (%)', ascending=False)
-        print("نتائج مختبر الاستراتيجيات (Yahoo Finance):")
+        print("\n=== نتائج مختبر الاستراتيجيات ===")
         print(results_df.to_string(index=False))
         
         avg_win_rate = results_df['Win Rate (%)'].mean()
-        print(f"\nمتوسط نسبة النجاح عبر جميع الأزواج: {round(avg_win_rate, 2)}%")
+        print(f"\nمتوسط نسبة النجاح: {round(avg_win_rate, 2)}%")
     else:
-        print("لم يتم العثور على بيانات أو صفقات صالحة.")
+        print("\n⚠ لم يتم العثور على بيانات صالحة. جرب فريم 1h أو period=30d")
