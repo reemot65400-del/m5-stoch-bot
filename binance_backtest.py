@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 
 # ═══════════════════════════════════════════════
-# استراتيجية Mean Reversion V4 - MACD + ADX + BB
+# استراتيجية Mean Reversion V3 - مع فلتر ADX
 # فريم: 15 دقيقة | نسبة فوز مستهدفة: 65%+
-# ═══════════════════════════════════════════════
+# ══════════════════════════════════════════════
 ASSET_POOL = [
     "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", 
     "XRP-USD", "ADA-USD", "DOGE-USD", "TRX-USD", 
@@ -15,7 +15,7 @@ ASSET_POOL = [
 ]
 
 def calculate_indicators(df):
-    """حساب جميع المؤشرات: BB, RSI, ADX, MACD"""
+    """حساب جميع المؤشرات بما فيها ADX"""
     # Bollinger Bands (20, 2)
     df['BB_Middle'] = df['Close'].rolling(window=20).mean()
     bb_std = df['Close'].rolling(window=20).std()
@@ -56,17 +56,10 @@ def calculate_indicators(df):
     dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di))
     df['ADX'] = dx.rolling(window=14).mean()
     
-    # MACD (12, 26, 9)
-    ema_12 = df['Close'].ewm(span=12, adjust=False).mean()
-    ema_26 = df['Close'].ewm(span=26, adjust=False).mean()
-    df['MACD'] = ema_12 - ema_26
-    df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
-    df['MACD_Hist'] = df['MACD'] - df['MACD_Signal']
-    
     return df
 
 def detect_reversal_pattern(row, prev_row, direction):
-    """كشف نماذج الانعكاس (Hammer, Shooting Star, Engulfing)"""
+    """كشف نماذج الانعكاس"""
     body_curr = abs(row['Close'] - row['Open'])
     body_prev = abs(prev_row['Close'] - prev_row['Open'])
     range_curr = row['High'] - row['Low']
@@ -102,7 +95,6 @@ def run_backtest():
     valid_symbols = []
     print("🔍 Validating assets on Yahoo Finance...")
     
-    # التحقق من توفر الرموز قبل بدء الاختبار
     for symbol in ASSET_POOL:
         try:
             test = yf.download(symbol, period="1d", interval="15m", progress=False)
@@ -117,11 +109,10 @@ def run_backtest():
         return
 
     all_trades = []
-    print(f"\n🚀 Starting Mean Reversion V4 Backtest (MACD + ADX + BB) on {len(valid_symbols)} Assets...")
+    print(f"\n Starting Mean Reversion V3 Backtest (15m) on {len(valid_symbols)} Assets...")
     
     for symbol in valid_symbols:
         try:
-            # جلب بيانات 60 يوم على فريم 15 دقيقة
             df = yf.download(symbol, period="60d", interval="15m", progress=False)
             
             if isinstance(df.columns, pd.MultiIndex):
@@ -138,34 +129,28 @@ def run_backtest():
                 curr = df.iloc[i]
                 prev = df.iloc[i-1]
                 
-                #  فلتر 1: ADX > 20 (مرونة أكبر للسماح بحركة السوق)
-                adx_ok = curr['ADX'] > 20
+                # ⭐ فلتر ADX الجديد: نتجنب الأسواق الجانبية
+                adx_ok = curr['ADX'] > 25
                 
-                # ⭐ فلتر 2: BB Width > 0.01 (تجنب الأسواق الميتة فقط)
-                bb_width_ok = curr['BB_Width'] > 0.01
-                
-                # ⭐ فلتر 3: MACD Histogram يؤكد بداية الانعكاس
-                macd_long = curr['MACD_Hist'] > prev['MACD_Hist']
-                macd_short = curr['MACD_Hist'] < prev['MACD_Hist']
+                # ⭐ فلتر BB Width: نتجنب الأسواق المضغوطة جداً
+                bb_width_ok = curr['BB_Width'] > 0.02
                 
                 if not (adx_ok and bb_width_ok):
                     continue
                 
-                # ⭐ شروط LONG (مخففة قليلاً لضمان توليد إشارات)
+                # شروط LONG
                 long_condition = (
                     curr['Close'] <= curr['BB_Lower'] and
-                    curr['RSI'] < 35 and # تم رفع الحد من 30 إلى 35
-                    curr['Volume'] > curr['Vol_MA'] * 0.8 and # مرونة في شرط الحجم
-                    macd_long and
+                    curr['RSI'] < 30 and
+                    curr['Volume'] > curr['Vol_MA'] and
                     detect_reversal_pattern(curr, prev, 'LONG')
                 )
                 
-                # ⭐ شروط SHORT (مخففة قليلاً)
+                # شروط SHORT
                 short_condition = (
                     curr['Close'] >= curr['BB_Upper'] and
-                    curr['RSI'] > 65 and # تم خفض الحد من 70 إلى 65
-                    curr['Volume'] > curr['Vol_MA'] * 0.8 and
-                    macd_short and
+                    curr['RSI'] > 70 and
+                    curr['Volume'] > curr['Vol_MA'] and
                     detect_reversal_pattern(curr, prev, 'SHORT')
                 )
                 
@@ -177,7 +162,8 @@ def run_backtest():
                 
                 if signal:
                     entry_price = curr['Close']
-                    # الإغلاق بعد 5 شموع (75 دقيقة)
+                    
+                    # ⭐ تمديد المدة إلى 5 شموع (75 دقيقة)
                     exit_price = df.iloc[i+5]['Close']
                     
                     if signal == 'LONG':
@@ -206,7 +192,7 @@ def run_backtest():
             print(f"⚠️ Error on {symbol}: {str(e)[:50]}")
 
     if not all_trades:
-        print("❌ No trades generated. Strategy conditions are still too strict.")
+        print("❌ No trades generated. Try relaxing ADX filter.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -216,18 +202,18 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     avg_trades = total_t / len(all_trades)
+    
+    # إحصائيات إضافية
     assets_above_60 = len(df_res[df_res['WR %'] >= 60])
-    assets_above_70 = len(df_res[df_res['WR %'] >= 70])
     assets_below_50 = len(df_res[df_res['WR %'] < 50])
     
     print("\n" + "="*70)
-    print("📊 MEAN REVERSION V4 BACKTEST (OPTIMIZED FILTERS)")
+    print("📊 MEAN REVERSION V3 BACKTEST (ADX FILTER + 75min HOLD)")
     print("="*70)
     print(df_res.to_string(index=False))
     print("-"*70)
     print(f"🔢 ASSETS TESTED: {len(all_trades)}")
-    print(f"🌟 ASSETS WITH WR ≥ 70%: {assets_above_70}")
-    print(f"✅ ASSETS WITH WR ≥ 60%: {assets_above_60}")
+    print(f" ASSETS WITH WR ≥ 60%: {assets_above_60}")
     print(f"📉 ASSETS WITH WR < 50%: {assets_below_50}")
     print(f"📊 AVG TRADES/ASSET: {avg_trades:.1f}")
     print(f"🏆 TOTAL TRADES: {total_t}")
@@ -240,11 +226,11 @@ def run_backtest():
     elif overall_wr >= 65:
         print("✅ VERDICT: STRONG - RECOMMENDED WITH CONFIDENCE")
     elif overall_wr >= 60:
-        print("️ VERDICT: GOOD - NEEDS MINOR TUNING")
+        print("⚖️ VERDICT: GOOD - NEEDS MINOR TUNING")
     elif overall_wr >= 55:
         print("⚠️ VERDICT: MARGINAL - CONSIDER REVISION")
     else:
-        print("💀 VERDICT: FAILING - REJECT STRATEGY")
+        print(" VERDICT: FAILING - REJECT STRATEGY")
 
 if __name__ == "__main__":
     run_backtest()
