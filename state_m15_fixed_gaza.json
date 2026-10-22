@@ -15,24 +15,7 @@
     "AUDJPY=X": "2026-10-21T14:00:00+00:00",
     "EURAUD=X": "2026-10-22T17:30:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "4d154dd1",
-      "symbol": "EURAUD=X",
-      "type": "PUT",
-      "entry_price": 1.5989799499511719,
-      "entry_time": "2026-10-22T16:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "271bcd8e",
-      "symbol": "CHFJPY=X",
-      "type": "PUT",
-      "entry_price": 191.18800354003906,
-      "entry_time": "2026-10-22T18:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -285,6 +268,24 @@
       "exit_time": "2026-10-22T11:35:28.346667+00:00",
       "win": false,
       "pips": 1.798868179321289
+    },
+    {
+      "id": "4d154dd1",
+      "symbol": "EURAUD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-22T16:30:00+00:00",
+      "exit_time": "2026-10-22T17:00:00+00:00",
+      "win": true,
+      "pips": 5.199909210205078
+    },
+    {
+      "id": "271bcd8e",
+      "symbol": "CHFJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-22T18:00:00+00:00",
+      "exit_time": "2026-10-22T18:30:00+00:00",
+      "win": true,
+      "pips": 0.70037841796875
     }
   ],
   "daily_counter_date": "2026-10-22",
