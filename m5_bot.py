@@ -1,33 +1,30 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.2 (Guaranteed-Reports & Fresh-Data Release)
-الإصلاحات الهندسية الجذرية في v4.2:
-1. ★★ إصلاح قاتل للتأخير الزمني: نافذة حذف الشمعة الجارية كانت 90 دقيقة، فمع أي تأخر
-   بسيط من yfinance كانت تُحذف الشمعة المغلقة الطازجة ويُحلل على شمعة عمرها 65+ دقيقة
-   → إشارات متأخرة وتقاطعات انعكست قبل الدخول (هذا سبب "قليلة وخاسرة" بشكل رئيسي).
-   أصبحت 62 دقيقة (60 إغلاق + دقيقتان هامش بيانات) — شمعة مغلقة دائما طازجة.
-2. ★★ تقارير مضمونة التسليم: إلغاء نافذة 00:00-00:10 بالكامل — يُحاول الإرسال في كل
-   نبضة بعد منتصف الليل حتى ينجح مرة واحدة (مانع التكرار last_daily_report_date)،
-   مع رسالة "لم تُسجل صفقات" عند الفراغ بدل الصمت، وتواريخ عربية واضحة.
-3. ★★ ZoneInfo("Asia/Gaza") مع fallback آمن — ضبط التوقيت الصيفي/الشتوي تلقائيا
-   بدل الإزاحة الثابتة +3 التي تُخرج الحظر الليلي والتقارير عن الصواب نصف السنة.
-4. إضافة فلتر عطلة نهاية الأسبوع (السبت والأحد بتوقيت غزة) — منع الإشارات على
-   بيانات سوق مغلق/متجمد.
-5. جلب بيانات الحسم بنافذة 7 أيام بدل 3 (صفقات عطلة نهاية الأسبوع لا تضيع).
-6. Zero-Crash: تقرير محصن ضد المفاتيح الناقصة والتواريخ التالفة (coerce+dropna).
-الإصلاحات النهائية والحاسمة (مطبقة من منطق الـ M15 v3.8.2):
-1. ★★ إصلاح جذري لنافذة زمنية الحسم (استخدام وقت بداية الشمعة بدقة رياضية) ★★
-   - شمعة الدخول: entry_dt -> entry_dt + 15 دقيقة.
-   - شمعة الخروج: entry_dt + 15 -> entry_dt + 30 دقيقة.
-   - سعر الخروج = إغلاق الشمعة الثانية.
-2. ★★ إلغاء نظام Reply واستبداله برسائل مستقلة (حل لمشكلة State Loss في GitHub Actions) ★★
-3. ★★ إضافة آلية Retry Loop ذكية لجلب بيانات yfinance ضد التأخير اللحظي ★★
-4. ★★ تعديل التقارير لمنع السبام وإرسالها مرة واحدة فقط عند منتصف الليل بتوقيت غزة ★★
-5. توقيت غزة المحلي: يعمل 9 صباحا -> 12 منتصف الليل، ينام 12 -> 9 صباحا.
-ملاحظة: منطق الاستراتيجية (check_signal_logic) لم يُمَس إطلاقا.
+M15 Bollinger Trend Reversal Bot - v4.1 (Guaranteed-Reports Release)
+الإصلاحات الهندسية الجذرية في v4.0:
+1. إصلاح خطأ KeyError: 'wr' القاتل في إحصائيات الأيام الذي كان يمنع إرسال التقرير.
+2. إصلاح حساب صافي النقاط (Signed Pips) للأزواج والشرائح (طرح الخسائر بدلاً من جمعها).
+3. إزالة شرط (minute < 15) لضمان إرسال التقرير بعد الساعة 12 ليلاً حتى لو تأخر GitHub Actions.
+4. استخدام المنطقة الزمنية الديناميكية (Asia/Gaza) لضبط التوقيت الصيفي والشتوي تلقائياً.
+5. عدم تسجيل التقرير كـ "مُرسل" إلا بعد تأكيد استلام تليجرام للرسالة (200 OK).
+8. ★★ v4.1 (إصلاح جذري للتقارير): إزالة قيد الساعة بالكامل من التقارير الثلاثة —
+   التقرير يُحاول في كل نبضة طوال يوم الاستحقاق حتى ينجح الإرسال (ضمانة تشغيلية
+   ضد تأخر GitHub وتعطل Telegram لحظيًا)، ويبقى مانع التكرار last_*_report هو الوحيد.
+9. توحيد سلوك الفراغ: التقارير الثلاثة ترسل رسالة "لم تُسجَّل صفقات" بدل الصمت
+   (كان الأسبوعي والشهري يسجّلان "مُرسل" دون إرسال — صمت تام).
+10. تواريخ عربية واضحة في التقارير: "الثلاثاء 20 أكتوبر 2026" / "الأسبوع 42 (...)"
+    عبر dayofweek وقاموس عربي (بلا اعتماد على لغة الخادم).
+11. Zero-Crash إضافي: حماية من الأعمدة الناقصة في الأرشيف القديم + قيم NaN
+    في ساعة/يوم التحليل.
 """
-import os, sys, time, json, logging, uuid
+import os
+import os
+import sys
+import time
+import json
+import logging
+import uuid
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 from pathlib import Path
@@ -35,68 +32,71 @@ import requests
 import numpy as np
 import pandas as pd
 import warnings
+
 warnings.filterwarnings('ignore')
 
 try:
     import yfinance as yf
 except ImportError:
-    print("pip install yfinance"); sys.exit(1)
+    print("CRITICAL: Missing yfinance.")
+    sys.exit(1)
+
+# ═══════════════════════════════════════════════
+# 1. الإعدادات العامة
+# ═══════════════════════════════════════════════
+BOT_NAME = "M15_BB_Sniper_v4_1_Pro"
+STATE_FILE = "state_m15_fixed_gaza.json"
+LOG_LEVEL = logging.INFO
 
 try:
     GAZA_TZ = ZoneInfo("Asia/Gaza")
 except Exception:
     GAZA_TZ = timezone(timedelta(hours=3))
 
-def get_gaza_now() -> datetime:
-    """توقيت غزة الحقيقي مع دعم التوقيت الصيفي/الشتوي"""
-    return datetime.now(timezone.utc).astimezone(GAZA_TZ)
-
-# ═══════════════════════════════════════════════
-# 1. الإعدادات العامة
-# ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_2_Pro" # ← تم تصحيح الاسم ليكون M15
-STATE_FILE = "state_m15_fixed_gaza.json" # ← تم تصحيح ملف الحالة ليكون خاصاً بالـ M15
-LOG_LEVEL = logging.INFO
-
 TRADING_SYMBOLS = [
-    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
-    "USDCAD=X", "NZDUSD=X", "EURGBP=X", "EURCHF=X",
-    "GBPJPY=X", "AUDJPY=X", "CADJPY=X", "CHFJPY=X",
-    "EURAUD=X", "USDCHF=X"
+    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "USDCHF=X",
+    "AUDUSD=X", "USDCAD=X", "NZDUSD=X", "EURGBP=X",
+    "EURJPY=X", "GBPJPY=X", "AUDJPY=X", "CADJPY=X",
+    "CHFJPY=X", "NZDJPY=X"
 ]
 
 BB_PERIOD = 15
 BB_STD_DEV = 2.3
 EMA_TREND_PERIOD = 200
 
-BAN_START_HOUR_GAZA = 0   
-BAN_END_HOUR_GAZA = 9     
+BAN_START_HOUR_GAZA = 0
+BAN_END_HOUR_GAZA = 9
 
-FREEZE_DURATION_MINUTES = 45 # ← ★★ الإصلاح الجراحي: تغيير من 15 إلى 45 لمنع التكرار السريع ★★
-TRADE_DURATION_MINUTES = 15 # ← مدة الصفقة 15 دقيقة (كما يجب أن تكون في M15)
+FREEZE_DURATION_MINUTES = 15
+TRADE_DURATION_MINUTES = 15
 
 TG_TOKEN = os.getenv("TG_TOKEN", "").strip()
 TG_CHAT = os.getenv("TG_CHAT", "").strip()
 
 logging.basicConfig(
     level=LOG_LEVEL,
-    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    format="%(asctime)s | %(levelname)-8s | %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
 log = logging.getLogger(BOT_NAME)
+
+
+def get_gaza_now() -> datetime:
+    return datetime.now(timezone.utc).astimezone(GAZA_TZ)
+
 
 # ═══════════════════════════════════════════════
 # 2. أدوات الاتصال والحالة
 # ═══════════════════════════════════════════════
 
-def send_telegram(msg: str):
+def send_telegram(msg: str) -> bool:
     if not TG_TOKEN or not TG_CHAT:
         log.warning("Telegram credentials missing.")
         return False
-    
+
     url = f"https://api.telegram.org/bot{TG_TOKEN}/sendMessage"
     payload = {"chat_id": TG_CHAT, "text": msg, "parse_mode": "Markdown"}
-    
+
     for attempt in range(3):
         try:
             resp = requests.post(url, json=payload, timeout=15)
@@ -106,20 +106,17 @@ def send_telegram(msg: str):
                 wait = resp.json().get('parameters', {}).get('retry_after', 5)
                 time.sleep(wait)
             elif resp.status_code == 400:
-                log.warning("TG Markdown parse error, retrying as plain text...")
-                plain = {"chat_id": TG_CHAT, "text": msg.replace("*", "").replace("`", "").replace("_", "")}
-                try:
-                    resp_plain = requests.post(url, json=plain, timeout=15)
-                    if resp_plain.status_code == 200:
-                        return True
-                except Exception:
-                    pass
+                log.warning(f"TG Markdown parse error ({resp.text}), retrying as plain text...")
+                payload_plain = {"chat_id": TG_CHAT, "text": msg.replace("*", "").replace("`", "").replace("_", "")}
+                resp_plain = requests.post(url, json=payload_plain, timeout=15)
+                if resp_plain.status_code == 200:
+                    return True
                 break
             else:
-                log.error(f"TG API Error: {resp.status_code}")
+                log.error(f"TG API Error: {resp.status_code} | {resp.text}")
                 break
         except Exception as e:
-            log.error(f"TG Send Failed: {e}")
+            log.error(f"TG Send Failed (Attempt {attempt + 1}): {e}")
             time.sleep(2)
     return False
 
@@ -144,12 +141,11 @@ class StateManager:
             try:
                 with open(self.filepath, 'r', encoding='utf-8') as f:
                     loaded = json.load(f)
-                    for k in self.data.keys():
+                    for k in self.data:
                         if k in loaded:
                             self.data[k] = loaded[k]
-                log.info("State loaded successfully.")
             except Exception as e:
-                log.error(f"Failed to load state: {e}. Starting fresh.")
+                log.error(f"State Load Error: {e}. Resetting state.")
                 self.save()
         else:
             self.save()
@@ -166,7 +162,12 @@ class StateManager:
     def log_summary(self):
         try:
             frozen_active = [s for s in self.data["frozen_pairs"] if self.is_frozen(s)]
-            log.info(f"STATE SUMMARY | open={len(self.data['open_trades'])} | frozen={len(frozen_active)} | history={len(self.data['trade_history'])}")
+            log.info(
+                f"STATE SUMMARY | open={len(self.data['open_trades'])} | "
+                f"frozen={len(frozen_active)} | history={len(self.data['trade_history'])} | "
+                f"signals_today={self.data.get('daily_signal_count')} | "
+                f"last_daily={self.data.get('last_daily_report')}"
+            )
         except Exception as e:
             log.error(f"State summary failed: {e}")
 
@@ -214,11 +215,12 @@ class StateManager:
             self.data["trade_history"] = self.data["trade_history"][-2000:]
         self.save()
 
+
 # ═══════════════════════════════════════════════
-# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياً)
+# 3. محرك البيانات والاستراتيجية (لم يُمس)
 # ═══════════════════════════════════════════════
 
-def get_data(symbol: str, interval: str = "15m", period: str = "60d"): # ← interval="15m"
+def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
     df = None
     for attempt in range(3):
         try:
@@ -240,8 +242,7 @@ def get_data(symbol: str, interval: str = "15m", period: str = "60d"): # ← int
         df = df[~df.index.duplicated()].sort_index().dropna()
 
         now_utc = pd.Timestamp.now(tz="UTC")
-        # حذف الشمعة الجارية فقط: 15 دقيقة إغلاق + دقيقتان هامش بيانات
-        if not df.empty and df.index[-1] + pd.Timedelta(minutes=17) > now_utc: 
+        if not df.empty and df.index[-1] + pd.Timedelta(minutes=15) > now_utc:
             df = df.iloc[:-1]
 
         if len(df) < EMA_TREND_PERIOD + 10:
@@ -298,8 +299,9 @@ def analyze_market(symbol: str):
         "diag_near": near, "diag_gap_pips": gap_pips
     }
 
+
 # ═══════════════════════════════════════════════
-# 4. نظام الحسم التلقائي (مصحح للمدة 15 دقيقة)
+# 4. نظام الحسم التلقائي
 # ═══════════════════════════════════════════════
 
 def resolve_pending_trades(sm: StateManager):
@@ -315,82 +317,65 @@ def resolve_pending_trades(sm: StateManager):
             if entry_dt.tzinfo is None:
                 entry_dt = entry_dt.replace(tzinfo=timezone.utc)
 
-            # ★★ التصحيح الجوهري هنا ★★
-            # entry_dt هو وقت *بداية* شمعة الدخول (مثال 10:00).
-            # شمعة الدخول تغلق عند 10:15.
-            # شمعة الخروج تبدأ 10:15 وتغلق 10:30.
-            exit_candle_start = entry_dt + timedelta(minutes=TRADE_DURATION_MINUTES) # 10:15
-            exit_candle_close = exit_candle_start + timedelta(minutes=TRADE_DURATION_MINUTES) # 10:30
-            
-            # ننتظر إغلاق شمعة الخروج + هامش تحديث البيانات
-            check_ready_time = exit_candle_close + timedelta(minutes=2) # 10:32
-            
+            exit_candle_start = entry_dt + timedelta(minutes=TRADE_DURATION_MINUTES)
+            check_ready_time = exit_candle_start + timedelta(minutes=TRADE_DURATION_MINUTES) + timedelta(minutes=2)
+
             if now_utc < check_ready_time:
                 continue
-            
-            sym = trade['symbol']
-            dr = trade['direction']
-            entry_px = float(trade['entry_price'])
-            
-            log.info(f"Resolving {sym} | Target Exit Close: {exit_candle_close}")
-            
-            df_exit_full = get_data(sym) # ← استخدام get_data بدلاً من fetch_h1_data
-            if df_exit_full is None or df_exit_full.empty:
-                log.warning(f"No exit data for {sym}. Retry next cycle.")
-                continue
-                
-            # البحث عن الشمعة التي تبدأ عند/بعد وقت بداية شمعة الخروج
-            target_ts = pd.Timestamp(exit_candle_start)
-            future_mask = df_exit_full.index >= target_ts
-            
-            if not future_mask.any():
-                # احتياطي لنقص البيانات
-                past_mask = df_exit_full.index < target_ts
-                if past_mask.any():
-                    exit_px = float(df_exit_full[past_mask].iloc[-1]['Close'])
-                    log.warning(f"Exit candle not ready for {sym}, using fallback last close.")
-                else:
-                    log.error(f"No candles at all for {sym}. Skipping.")
-                    continue
-            else:
-                exit_px = float(df_exit_full[future_mask].iloc[0]['Close'])
 
-            pip_mult = 100.0 if "JPY" in sym else 10000.0
-            diff = exit_px - entry_px
+            df = get_data(trade['symbol'])
+            if df is None or df.empty:
+                continue
+
+            target_ts = pd.Timestamp(exit_candle_start)
+            future = df[df.index >= target_ts]
+
+            if len(future) > 0:
+                exit_price = float(future.iloc[0]['Close'])
+            else:
+                past = df[df.index < target_ts]
+                if past.empty:
+                    continue
+                exit_price = float(past.iloc[-1]['Close'])
+
+            entry_px = float(trade['entry_price'])
+            diff = exit_price - entry_px
+            pip_mult = 100.0 if "JPY" in trade['symbol'] else 10000.0
             pips_diff = abs(diff) * pip_mult
-            
-            log.info(f"Success! Entry={entry_px} Exit={exit_px} Diff={diff} Pips={pips_diff:.2f}")
-            
-            rid = trade.get('telegram_message_id') 
-            
-            # سوق ساكن حقاً
+
             if pips_diff < 0.1:
                 emoji, is_win, status_text = "⚪ لاغي", None, "_Market Flat_"
             else:
-                is_win = (diff > 0) if dr == 'CALL' else (diff < 0)
+                is_win = (diff > 0) if trade['type'] == 'CALL' else (diff < 0)
                 emoji = "✅ ربح" if is_win else "❌ خسارة"
                 status_text = ""
 
-            result_msg = (f"{emoji} *نتيجة M15: {sym}*\n\n"
-                          f"⏰ *وقت الدخول:* `{entry_dt.strftime('%H:%M')} UTC`\n"
-                          f"📈 *الاتجاه:* `{dr}`\n"
-                          f"💰 *الدخول:* `{entry_px:.5f}`\n"
-                          f"💸 *الخروج:* `{exit_px:.5f}`\n"
-                          f"📊 *الفرق:* `{pips_diff:+.1f} نقطة` {status_text}")
+            result_msg = (
+                f"{emoji} *نتيجة M15: {trade['symbol']}*\n\n"
+                f"⏰ *وقت الدخول:* `{entry_dt.strftime('%H:%M')} UTC`\n"
+                f"📈 *الاتجاه:* `{trade['type']}`\n"
+                f"💰 *الدخول:* `{entry_px:.5f}`\n"
+                f"💸 *الخروج:* `{exit_price:.5f}`\n"
+                f"📊 *الفرق:* `{pips_diff:+.1f} نقطة` {status_text}"
+            )
             send_telegram(result_msg)
 
             sm.archive_trade({
-                "id": trade['id'], "symbol": sym, "type": dr,
-                "entry_time": trade['entry_time'], "exit_time": exit_candle_close.isoformat(), # ← تسجيل وقت الإغلاق الفعلي
-                "win": is_win, "pips": float(pips_diff)
+                "id": trade['id'],
+                "symbol": trade['symbol'],
+                "type": trade['type'],
+                "entry_time": trade['entry_time'],
+                "exit_time": now_utc.isoformat(),
+                "win": is_win,
+                "pips": float(pips_diff)
             })
             resolved_ids.append(trade['id'])
-            
         except Exception as e:
             log.error(f"Critical Error resolving trade {trade.get('id')}: {e}", exc_info=True)
 
     for tid in resolved_ids:
         sm.remove_open_trade(tid)
+
 
 # ═══════════════════════════════════════════════
 # 5. نظام التقارير المتقدم (Zero-Bug & Guaranteed Delivery)
@@ -406,15 +391,17 @@ AR_DAYS = {0: 'الاثنين', 1: 'الثلاثاء', 2: 'الأربعاء', 3:
 
 
 def ar_month_name(dt: datetime) -> str:
+    """اسم الشهر العربي دائمًا — بلا اعتماد على لغة الخادم"""
     return AR_MONTHS.get(dt.strftime("%m"), dt.strftime("%B"))
 
 
 def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -> bool:
+    """يرسل التقرير ويعيد True فقط إذا استلم تليجرام الرسالة فعلاً (200 OK)"""
     if df is None or df.empty:
         msg = (
             f"*📊 التقرير {report_type} ({period_name})*\n\n"
             f"📈 *إجمالي الصفقات:* `0`\n"
-            f"ℹ️ _لم تُسجل صفقات خلال هذه الفترة._\n\n"
+            f"ℹ️ _لم تُسجَّل صفقات خلال هذه الفترة._\n\n"
             f"_البوت يعمل بكفاءة ويراقب السوق بانتظام!_"
         )
         sent = send_telegram(msg)
@@ -453,7 +440,7 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
     wr = (wins / valid_trades * 100.0) if valid_trades > 0 else 0.0
     net_pips = float(df['signed_pips'].sum())
 
-    # 1. أفضل/أسوأ زوج (محصن ضد القسمة على صفر)
+    # 1. أفضل/أسوأ زوج (محصّن ضد القسمة على صفر)
     pair_stats = df.groupby('symbol', as_index=False).agg(
         trades=('id', 'count'),
         wins=('win', lambda x: int((x == True).sum())),
@@ -472,13 +459,7 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         best_pair = valid_pairs.loc[valid_pairs['pips'].idxmax()]
         worst_pair = valid_pairs.loc[valid_pairs['pips'].idxmin()]
         best_pair_txt = f"🥇 {best_pair['symbol']} ({best_pair['pips']:+.1f} Pips, WR: {best_pair['wr']:.1f}%)"
-        
-        # ★★ إصلاح: التحقق من وجود أزواج أخرى مختلفة عن الأفضل ★★
-        other_pairs = valid_pairs[valid_pairs['symbol'] != best_pair['symbol']]
-        if not other_pairs.empty:
-            worst_pair_txt = f"⚠️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
-        else:
-            worst_pair_txt = "لا يوجد (زوج واحد فقط تم التداول عليه)"
+        worst_pair_txt = f"⚠️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
     else:
         best_pair_txt = "غير متاح"
         worst_pair_txt = "غير متاح"
@@ -563,6 +544,11 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
 
 def generate_advanced_reports(sm: StateManager):
+    """
+    ★★ v4.1 — الإصلاح الجذري: ضمانة تشغيلية للتقارير ★★
+    لا يوجد أي قيد hour/minute. التقرير يُحاول في كل نبضة خلال يوم الاستحقاق
+    حتى ينجح الإرسال مرة واحدة فقط (last_*_report يمنع التكرار).
+    """
     local_now = get_gaza_now()
     history = sm.data.get("trade_history", [])
 
@@ -613,6 +599,7 @@ def generate_advanced_reports(sm: StateManager):
         else:
             weekly_df = pd.DataFrame()
 
+        # v4.1: وحّد سلوك الفراغ — أرسل رسالة الاطمئنان بدل الصمت
         if send_detailed_report(weekly_df, "الأسبوعي", weekly_period_name):
             sm.data["last_weekly_report"] = last_week_str
             sm.save()
@@ -711,7 +698,7 @@ def main():
             f"📈 *الاتجاه:* {arrow}\n"
             f"💰 *السعر الحالي:* `{result['price']:.5f}`\n\n"
             f"🎯 *منطقة الدخول:* لمس البولنجر باندز\n"
-            f"🏷️ *فلتر الاتجاه (EMA200):* {'أعلى' if result['type']=='CALL' else 'أسفل'} المتوسط\n\n"
+            f"🏷️ *فلتر الاتجاه (EMA200):* {'أعلى' if result['type'] == 'CALL' else 'أسفل'} المتوسط\n\n"
             f"⏱️ *التعليمات:*\n"
             f"✅ ادخل فوراً (فرصة إحصائية عالية)\n\n"
             f"⌛ *انتهاء الصفقة:* {expiry_time} UTC\n"
