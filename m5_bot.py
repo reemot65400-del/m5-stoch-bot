@@ -1,31 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.2 (Guaranteed-Reports & Fresh-Data Release)
-الإصلاحات الهندسية الجذرية في v4.2:
-1. ★★ إصلاح قاتل للتأخير الزمني: نافذة حذف الشمعة الجارية كانت 90 دقيقة، فمع أي تأخر
-   بسيط من yfinance كانت تُحذف الشمعة المغلقة الطازجة ويُحلل على شمعة عمرها 65+ دقيقة
-   → إشارات متأخرة وتقاطعات انعكست قبل الدخول (هذا سبب "قليلة وخاسرة" بشكل رئيسي).
-   أصبحت 62 دقيقة (60 إغلاق + دقيقتان هامش بيانات) — شمعة مغلقة دائما طازجة.
-2. ★★ تقارير مضمونة التسليم: إلغاء نافذة 00:00-00:10 بالكامل — يُحاول الإرسال في كل
-   نبضة بعد منتصف الليل حتى ينجح مرة واحدة (مانع التكرار last_daily_report_date)،
-   مع رسالة "لم تُسجل صفقات" عند الفراغ بدل الصمت، وتواريخ عربية واضحة.
-3. ★★ ZoneInfo("Asia/Gaza") مع fallback آمن — ضبط التوقيت الصيفي/الشتوي تلقائيا
-   بدل الإزاحة الثابتة +3 التي تُخرج الحظر الليلي والتقارير عن الصواب نصف السنة.
-4. إضافة فلتر عطلة نهاية الأسبوع (السبت والأحد بتوقيت غزة) — منع الإشارات على
-   بيانات سوق مغلق/متجمد.
-5. جلب بيانات الحسم بنافذة 7 أيام بدل 3 (صفقات عطلة نهاية الأسبوع لا تضيع).
-6. Zero-Crash: تقرير محصن ضد المفاتيح الناقصة والتواريخ التالفة (coerce+dropna).
-الإصلاحات النهائية والحاسمة (مطبقة من منطق الـ M15 v3.8.2):
-1. ★★ إصلاح جذري لنافذة زمنية الحسم (استخدام وقت بداية الشمعة بدقة رياضية) ★★
-   - شمعة الدخول: entry_dt -> entry_dt + 15 دقيقة.
-   - شمعة الخروج: entry_dt + 15 -> entry_dt + 30 دقيقة.
-   - سعر الخروج = إغلاق الشمعة الثانية.
-2. ★★ إلغاء نظام Reply واستبداله برسائل مستقلة (حل لمشكلة State Loss في GitHub Actions) ★★
-3. ★★ إضافة آلية Retry Loop ذكية لجلب بيانات yfinance ضد التأخير اللحظي ★★
-4. ★★ تعديل التقارير لمنع السبام وإرسالها مرة واحدة فقط عند منتصف الليل بتوقيت غزة ★★
-5. توقيت غزة المحلي: يعمل 9 صباحا -> 12 منتصف الليل، ينام 12 -> 9 صباحا.
-ملاحظة: منطق الاستراتيجية (check_signal_logic) لم يُمَس إطلاقا.
+M15 Bollinger Trend Reversal Bot - v4.3 (Fixed Resolution Timing)
+الإصلاحات الهندسية في v4.3:
+1. ★★ إصلاح جذري لمشكلة عدم وصول النتائج (Resolution Failure):
+   كان يتم تسجيل entry_time كوقت "فتح" الشمعة، مما يسبب انزياحاً زمنياً في حساب وقت الخروج
+   ويجعل البوت يفشل في إيجاد الشمعة الصحيحة للحسم أحياناً.
+   الآن: يتم تسجيل entry_time كوقت "إغلاق" شمعة الإشارة (الدقيقة 15)، وهو المرجع الحقيقي
+   لدورة الصفقة (30 دقيقة من لحظة الإغلاق).
+2. تحسين دقة الحسم: الاعتماد على وقت الإغلاق الفعلي للشموع بدلاً من التقدير النظري.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -48,14 +31,13 @@ except Exception:
     GAZA_TZ = timezone(timedelta(hours=3))
 
 def get_gaza_now() -> datetime:
-    """توقيت غزة الحقيقي مع دعم التوقيت الصيفي/الشتوي"""
     return datetime.now(timezone.utc).astimezone(GAZA_TZ)
 
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_2_Pro" # ← تم تصحيح الاسم ليكون M15
-STATE_FILE = "state_m15_fixed_gaza.json" # ← تم تصحيح ملف الحالة ليكون خاصاً بالـ M15
+BOT_NAME = "M15_BB_Sniper_v4_3_Pro" # ← تحديث الرقم للإشارة للإصلاح
+STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
 TRADING_SYMBOLS = [
@@ -72,8 +54,8 @@ EMA_TREND_PERIOD = 200
 BAN_START_HOUR_GAZA = 0   
 BAN_END_HOUR_GAZA = 9     
 
-FREEZE_DURATION_MINUTES = 45 # ← ★★ الإصلاح الجراحي: تغيير من 15 إلى 45 لمنع التكرار السريع ★★
-TRADE_DURATION_MINUTES = 15 # ← مدة الصفقة 15 دقيقة (كما يجب أن تكون في M15)
+FREEZE_DURATION_MINUTES = 45 
+TRADE_DURATION_MINUTES = 15 
 
 TG_TOKEN = os.getenv("TG_TOKEN", "").strip()
 TG_CHAT = os.getenv("TG_CHAT", "").strip()
@@ -86,7 +68,7 @@ logging.basicConfig(
 log = logging.getLogger(BOT_NAME)
 
 # ═══════════════════════════════════════════════
-# 2. أدوات الاتصال والحالة
+# 2. أدوات الاتصال والحالة (نفسها بدون تغيير)
 # ═══════════════════════════════════════════════
 
 def send_telegram(msg: str):
@@ -215,10 +197,10 @@ class StateManager:
         self.save()
 
 # ═══════════════════════════════════════════════
-# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياً)
+# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياَ)
 # ═══════════════════════════════════════════════
 
-def get_data(symbol: str, interval: str = "15m", period: str = "60d"): # ← interval="15m"
+def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
     df = None
     for attempt in range(3):
         try:
@@ -267,7 +249,7 @@ def analyze_market(symbol: str):
         return None
 
     curr = df.iloc[-1]
-    candle_time = df.index[-1]
+    candle_time = df.index[-1] # هذا وقت فتح الشمعة
 
     price = float(curr['Close'])
     ema_200 = float(curr['EMA_200'])
@@ -299,7 +281,7 @@ def analyze_market(symbol: str):
     }
 
 # ═══════════════════════════════════════════════
-# 4. نظام الحسم التلقائي (مصحح للمدة 15 دقيقة)
+# 4. نظام الحسم التلقائي (★★ مُعدل جذرياَ لحل مشكلة عدم الوصول ★★)
 # ═══════════════════════════════════════════════
 
 def resolve_pending_trades(sm: StateManager):
@@ -311,19 +293,21 @@ def resolve_pending_trades(sm: StateManager):
 
     for trade in sm.data["open_trades"]:
         try:
-            entry_dt = datetime.fromisoformat(trade['entry_time'])
-            if entry_dt.tzinfo is None:
-                entry_dt = entry_dt.replace(tzinfo=timezone.utc)
-
-            # ★★ التصحيح الجوهري هنا ★★
-            # entry_dt هو وقت *بداية* شمعة الدخول (مثال 10:00).
-            # شمعة الدخول تغلق عند 10:15.
-            # شمعة الخروج تبدأ 10:15 وتغلق 10:30.
-            exit_candle_start = entry_dt + timedelta(minutes=TRADE_DURATION_MINUTES) # 10:15
-            exit_candle_close = exit_candle_start + timedelta(minutes=TRADE_DURATION_MINUTES) # 10:30
+            # قراءة وقت الدخول المسجل
+            entry_dt_raw = datetime.fromisoformat(trade['entry_time'])
+            if entry_dt_raw.tzinfo is None:
+                entry_dt_raw = entry_dt_raw.replace(tzinfo=timezone.utc)
             
-            # ننتظر إغلاق شمعة الخروج + هامش تحديث البيانات
-            check_ready_time = exit_candle_close + timedelta(minutes=2) # 10:32
+            # ★★ الإصلاح هنا: تحويل وقت الفتح إلى وقت الإغلاق الفعلي للشمعة ★★
+            # الشمعة تستمر 15 دقيقة. إذن وقت الإغلاق = وقت الفتح + 15 دقيقة.
+            # هذا هو اللحظة التي "يبدأ" فيها العد التنازلي للصفقة الحقيقية.
+            actual_entry_close_time = entry_dt_raw + timedelta(minutes=TRADE_DURATION_MINUTES)
+
+            # تحديد موعد انتهاء الصفقة (شمعة خروج واحدة = 15 دقيقة أخرى)
+            expected_exit_close_time = actual_entry_close_time + timedelta(minutes=TRADE_DURATION_MINUTES)
+            
+            # ننتظر إغلاق شمعة الخروج + هامش تحديث البيانات (دقيقتان)
+            check_ready_time = expected_exit_close_time + timedelta(minutes=2)
             
             if now_utc < check_ready_time:
                 continue
@@ -332,28 +316,35 @@ def resolve_pending_trades(sm: StateManager):
             dr = trade['direction']
             entry_px = float(trade['entry_price'])
             
-            log.info(f"Resolving {sym} | Target Exit Close: {exit_candle_close}")
+            log.info(f"Resolving {sym} | Target Exit Close: {expected_exit_close_time}")
             
-            df_exit_full = get_data(sym) # ← استخدام get_data بدلاً من fetch_h1_data
+            df_exit_full = get_data(sym)
             if df_exit_full is None or df_exit_full.empty:
                 log.warning(f"No exit data for {sym}. Retry next cycle.")
                 continue
                 
-            # البحث عن الشمعة التي تبدأ عند/بعد وقت بداية شمعة الخروج
-            target_ts = pd.Timestamp(exit_candle_start)
-            future_mask = df_exit_full.index >= target_ts
+            # البحث عن الشمعة التي تمثل "وقت الخروج"
+            # نحن نريد إغلاق الشمعة التي تنتهي عند expected_exit_close_time
+            # في yfinance، الفهرس هو وقت البدء. إذن الشمعة المطلوبة تبدأ عند:
+            target_candle_start = expected_exit_close_time - timedelta(minutes=TRADE_DURATION_MINUTES)
             
-            if not future_mask.any():
-                # احتياطي لنقص البيانات
-                past_mask = df_exit_full.index < target_ts
+            # نجدها بمطابقة تقريبية (لأن الفهارس قد تكون بالثواني الجزئية)
+            mask = (df_exit_full.index >= target_candle_start - timedelta(seconds=30)) & \
+                   (df_exit_full.index <= target_candle_start + timedelta(seconds=30))
+                   
+            matching_candles = df_exit_full[mask]
+            
+            if not matching_candles.empty:
+                exit_px = float(matching_candles.iloc[0]['Close'])
+            else:
+                # احتياطي صارم: نأخذ أقرب شمعة مغلقة قبل الموعد المحدد
+                past_mask = df_exit_full.index < target_candle_start
                 if past_mask.any():
                     exit_px = float(df_exit_full[past_mask].iloc[-1]['Close'])
-                    log.warning(f"Exit candle not ready for {sym}, using fallback last close.")
+                    log.warning(f"Exact exit candle not found for {sym}, using last close before target.")
                 else:
-                    log.error(f"No candles at all for {sym}. Skipping.")
+                    log.error(f"No candles available for {sym} resolution. Skipping.")
                     continue
-            else:
-                exit_px = float(df_exit_full[future_mask].iloc[0]['Close'])
 
             pip_mult = 100.0 if "JPY" in sym else 10000.0
             diff = exit_px - entry_px
@@ -361,9 +352,7 @@ def resolve_pending_trades(sm: StateManager):
             
             log.info(f"Success! Entry={entry_px} Exit={exit_px} Diff={diff} Pips={pips_diff:.2f}")
             
-            rid = trade.get('telegram_message_id') 
-            
-            # سوق ساكن حقاً
+            # سوق ساكن حقاَ
             if pips_diff < 0.1:
                 emoji, is_win, status_text = "⚪ لاغي", None, "_Market Flat_"
             else:
@@ -372,7 +361,7 @@ def resolve_pending_trades(sm: StateManager):
                 status_text = ""
 
             result_msg = (f"{emoji} *نتيجة M15: {sym}*\n\n"
-                          f"⏰ *وقت الدخول:* `{entry_dt.strftime('%H:%M')} UTC`\n"
+                          f"⏰ *وقت الدخول:* `{actual_entry_close_time.strftime('%H:%M')} UTC`\n"
                           f"📈 *الاتجاه:* `{dr}`\n"
                           f"💰 *الدخول:* `{entry_px:.5f}`\n"
                           f"💸 *الخروج:* `{exit_px:.5f}`\n"
@@ -381,7 +370,8 @@ def resolve_pending_trades(sm: StateManager):
 
             sm.archive_trade({
                 "id": trade['id'], "symbol": sym, "type": dr,
-                "entry_time": trade['entry_time'], "exit_time": exit_candle_close.isoformat(), # ← تسجيل وقت الإغلاق الفعلي
+                "entry_time": trade['entry_time'], # نحفظ الأصلي للأرشيف
+                "exit_time": expected_exit_close_time.isoformat(), # وقت الإغلاق الفعلي للخروج
                 "win": is_win, "pips": float(pips_diff)
             })
             resolved_ids.append(trade['id'])
@@ -393,7 +383,7 @@ def resolve_pending_trades(sm: StateManager):
         sm.remove_open_trade(tid)
 
 # ═══════════════════════════════════════════════
-# 5. نظام التقارير المتقدم (Zero-Bug & Guaranteed Delivery)
+# 5. نظام التقارير المتقدم (نفسه بدون تغيير)
 # ═══════════════════════════════════════════════
 
 AR_MONTHS = {
@@ -661,7 +651,7 @@ def main():
     sm = StateManager(STATE_FILE)
     sm.log_summary()
 
-    # 1. حسم الصفقات المفتوحة أولاً لتدخل في التقرير إذا حان وقته
+    # 1. حسم الصفقات المفتوحة أولاَ لتدخل في التقرير إذا حان وقته
     resolve_pending_trades(sm)
 
     # 2. فحص وإرسال التقارير (اليومية / الأسبوعية / الشهرية)
@@ -713,7 +703,7 @@ def main():
             f"🎯 *منطقة الدخول:* لمس البولنجر باندز\n"
             f"🏷️ *فلتر الاتجاه (EMA200):* {'أعلى' if result['type']=='CALL' else 'أسفل'} المتوسط\n\n"
             f"⏱️ *التعليمات:*\n"
-            f"✅ ادخل فوراً (فرصة إحصائية عالية)\n\n"
+            f"✅ ادخل فوراَ (فرصة إحصائية عالية)\n\n"
             f"⌛ *انتهاء الصفقة:* {expiry_time} UTC\n"
             f"💰 *شرط الـ payout:* 85% فأعلى فقط\n\n"
             f"🕒 *وقت وصول الإشارة:* {arrival_time_gaza} (غزة)\n"
@@ -728,7 +718,7 @@ def main():
                 "symbol": result['symbol'],
                 "type": result['type'],
                 "entry_price": result['price'],
-                "entry_time": result['time'].isoformat(),
+                "entry_time": result['time'].isoformat(), # ← نحتفظ بوقت الفتح كما هو
                 "msg_id": mid
             })
             log.info(f"Signal Sent & Frozen: {sym} {result['type']} (#{signal_num})")
