@@ -16,14 +16,6 @@
   },
   "open_trades": [
     {
-      "id": "738514a5",
-      "symbol": "GBPUSD=X",
-      "type": "CALL",
-      "entry_price": 1.3391362428665161,
-      "entry_time": "2026-10-22T10:00:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "927b2ae0",
       "symbol": "GBPUSD=X",
       "type": "CALL",
@@ -257,6 +249,15 @@
       "exit_time": "2026-10-22T10:20:28.203590+00:00",
       "win": false,
       "pips": 3.229379653930664
+    },
+    {
+      "id": "738514a5",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-22T10:00:00+00:00",
+      "exit_time": "2026-10-22T10:35:27.693982+00:00",
+      "win": false,
+      "pips": 5.1975250244140625
     }
   ],
   "daily_counter_date": "2026-10-22",
