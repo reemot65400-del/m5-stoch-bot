@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 
 # ═══════════════════════════════════════════════
-# استراتيجية Mean Reversion V2 - Bollinger + RSI
-# فريم: 15 دقيقة | نسبة فوز متوقعة: 65-70%
-# ═══════════════════════════════════════════════
+# استراتيجية Mean Reversion V3 - مع فلتر ADX
+# فريم: 15 دقيقة | نسبة فوز مستهدفة: 65%+
+# ══════════════════════════════════════════════
 ASSET_POOL = [
     "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", 
     "XRP-USD", "ADA-USD", "DOGE-USD", "TRX-USD", 
@@ -15,7 +15,7 @@ ASSET_POOL = [
 ]
 
 def calculate_indicators(df):
-    """حساب المؤشرات الجديدة: Bollinger Bands + RSI"""
+    """حساب جميع المؤشرات بما فيها ADX"""
     # Bollinger Bands (20, 2)
     df['BB_Middle'] = df['Close'].rolling(window=20).mean()
     bb_std = df['Close'].rolling(window=20).std()
@@ -33,13 +33,33 @@ def calculate_indicators(df):
     # Volume MA (20)
     df['Vol_MA'] = df['Volume'].rolling(window=20).mean()
     
-    # EMA للاتجاه العام
-    df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
+    # ADX (14) - مؤشر قوة الاتجاه
+    high = df['High']
+    low = df['Low']
+    close = df['Close']
+    
+    plus_dm = high.diff()
+    minus_dm = -low.diff()
+    
+    plus_dm = plus_dm.where((plus_dm > minus_dm) & (plus_dm > 0), 0.0)
+    minus_dm = minus_dm.where((minus_dm > plus_dm) & (minus_dm > 0), 0.0)
+    
+    tr1 = high - low
+    tr2 = (high - close.shift()).abs()
+    tr3 = (low - close.shift()).abs()
+    tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+    
+    atr = tr.rolling(window=14).mean()
+    plus_di = 100 * (plus_dm.rolling(window=14).mean() / atr)
+    minus_di = 100 * (minus_dm.rolling(window=14).mean() / atr)
+    
+    dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di))
+    df['ADX'] = dx.rolling(window=14).mean()
     
     return df
 
 def detect_reversal_pattern(row, prev_row, direction):
-    """كشف نماذج الانعكاس القوية"""
+    """كشف نماذج الانعكاس"""
     body_curr = abs(row['Close'] - row['Open'])
     body_prev = abs(prev_row['Close'] - prev_row['Open'])
     range_curr = row['High'] - row['Low']
@@ -47,12 +67,10 @@ def detect_reversal_pattern(row, prev_row, direction):
     if range_curr == 0: return False
     
     if direction == 'LONG':
-        # Hammer: جسم صغير في الأعلى، ذيل سفلي طويل
         lower_shadow = min(row['Open'], row['Close']) - row['Low']
         upper_shadow = row['High'] - max(row['Open'], row['Close'])
         is_hammer = (lower_shadow > (body_curr * 2)) and (upper_shadow < body_curr)
         
-        # Bullish Engulfing
         is_engulfing = (row['Close'] > row['Open']) and \
                       (prev_row['Close'] < prev_row['Open']) and \
                       (body_curr > body_prev) and \
@@ -60,14 +78,11 @@ def detect_reversal_pattern(row, prev_row, direction):
                       (row['Close'] > prev_row['Open'])
         
         return is_hammer or is_engulfing
-        
-    else:  # SHORT
-        # Shooting Star: جسم صغير في الأسفل، ذيل علوي طويل
+    else:
         upper_shadow = row['High'] - max(row['Open'], row['Close'])
         lower_shadow = min(row['Open'], row['Close']) - row['Low']
         is_shooting = (upper_shadow > (body_curr * 2)) and (lower_shadow < body_curr)
         
-        # Bearish Engulfing
         is_engulfing = (row['Close'] < row['Open']) and \
                       (prev_row['Close'] > prev_row['Open']) and \
                       (body_curr > body_prev) and \
@@ -78,7 +93,7 @@ def detect_reversal_pattern(row, prev_row, direction):
 
 def run_backtest():
     valid_symbols = []
-    print(" Validating assets on Yahoo Finance...")
+    print("🔍 Validating assets on Yahoo Finance...")
     
     for symbol in ASSET_POOL:
         try:
@@ -94,11 +109,10 @@ def run_backtest():
         return
 
     all_trades = []
-    print(f"\n🚀 Starting Mean Reversion Backtest (15m) on {len(valid_symbols)} Assets...")
+    print(f"\n Starting Mean Reversion V3 Backtest (15m) on {len(valid_symbols)} Assets...")
     
     for symbol in valid_symbols:
         try:
-            # جلب بيانات 60 يوم على فريم 15 دقيقة
             df = yf.download(symbol, period="60d", interval="15m", progress=False)
             
             if isinstance(df.columns, pd.MultiIndex):
@@ -111,25 +125,33 @@ def run_backtest():
             
             wins, losses, ties = 0, 0, 0
             
-            # التكرار بدءاً من الشمعة 100
-            for i in range(100, len(df) - 3):
+            for i in range(100, len(df) - 5):
                 curr = df.iloc[i]
                 prev = df.iloc[i-1]
                 
-                # شروط الدخول LONG (شراء)
+                # ⭐ فلتر ADX الجديد: نتجنب الأسواق الجانبية
+                adx_ok = curr['ADX'] > 25
+                
+                # ⭐ فلتر BB Width: نتجنب الأسواق المضغوطة جداً
+                bb_width_ok = curr['BB_Width'] > 0.02
+                
+                if not (adx_ok and bb_width_ok):
+                    continue
+                
+                # شروط LONG
                 long_condition = (
-                    curr['Close'] <= curr['BB_Lower'] and  # السعر لمس الحد السفلي
-                    curr['RSI'] < 30 and  # تشبع بيعي
-                    curr['Volume'] > curr['Vol_MA'] and  # حجم عالي
-                    detect_reversal_pattern(curr, prev, 'LONG')  # نموذج انعكاس
+                    curr['Close'] <= curr['BB_Lower'] and
+                    curr['RSI'] < 30 and
+                    curr['Volume'] > curr['Vol_MA'] and
+                    detect_reversal_pattern(curr, prev, 'LONG')
                 )
                 
-                # شروط الدخول SHORT (بيع)
+                # شروط SHORT
                 short_condition = (
-                    curr['Close'] >= curr['BB_Upper'] and  # السعر لمس الحد العلوي
-                    curr['RSI'] > 70 and  # تشبع شرائي
-                    curr['Volume'] > curr['Vol_MA'] and  # حجم عالي
-                    detect_reversal_pattern(curr, prev, 'SHORT')  # نموذج انعكاس
+                    curr['Close'] >= curr['BB_Upper'] and
+                    curr['RSI'] > 70 and
+                    curr['Volume'] > curr['Vol_MA'] and
+                    detect_reversal_pattern(curr, prev, 'SHORT')
                 )
                 
                 signal = None
@@ -141,16 +163,14 @@ def run_backtest():
                 if signal:
                     entry_price = curr['Close']
                     
-                    # الإغلاق بعد 3 شموع (45 دقيقة)
-                    exit_price = df.iloc[i+3]['Close']
+                    # ⭐ تمديد المدة إلى 5 شموع (75 دقيقة)
+                    exit_price = df.iloc[i+5]['Close']
                     
-                    # حساب الربح/الخسارة
                     if signal == 'LONG':
                         profit = exit_price - entry_price
                     else:
                         profit = entry_price - exit_price
                     
-                    # تحديد النتيجة
                     if profit > 0:
                         wins += 1
                     elif profit < 0:
@@ -172,7 +192,7 @@ def run_backtest():
             print(f"⚠️ Error on {symbol}: {str(e)[:50]}")
 
     if not all_trades:
-        print("❌ No trades generated.")
+        print("❌ No trades generated. Try relaxing ADX filter.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -181,31 +201,36 @@ def run_backtest():
     total_t = total_w + total_l
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
-    # حساب متوسط الصفقات لكل عملة
     avg_trades = total_t / len(all_trades)
     
+    # إحصائيات إضافية
+    assets_above_60 = len(df_res[df_res['WR %'] >= 60])
+    assets_below_50 = len(df_res[df_res['WR %'] < 50])
+    
     print("\n" + "="*70)
-    print(" MEAN REVERSION BACKTEST REPORT (15m - BOLLINGER + RSI)")
+    print("📊 MEAN REVERSION V3 BACKTEST (ADX FILTER + 75min HOLD)")
     print("="*70)
     print(df_res.to_string(index=False))
     print("-"*70)
-    print(f" ASSETS TESTED: {len(all_trades)}")
-    print(f" AVG TRADES/ASSET: {avg_trades:.1f}")
+    print(f"🔢 ASSETS TESTED: {len(all_trades)}")
+    print(f" ASSETS WITH WR ≥ 60%: {assets_above_60}")
+    print(f"📉 ASSETS WITH WR < 50%: {assets_below_50}")
+    print(f"📊 AVG TRADES/ASSET: {avg_trades:.1f}")
     print(f"🏆 TOTAL TRADES: {total_t}")
     print(f"✅ WINS: {total_w} | ❌ LOSSES: {total_l}")
     print(f"🎯 WIN RATE: {overall_wr:.2f}%")
     print("-"*70)
     
     if overall_wr >= 70:
-        print(" VERDICT: EXCELLENT STRATEGY - READY FOR LIVE!")
+        print("🔥 VERDICT: EXCELLENT - READY FOR LIVE TRADING!")
     elif overall_wr >= 65:
-        print("✅ VERDICT: STRONG STRATEGY - RECOMMENDED")
+        print("✅ VERDICT: STRONG - RECOMMENDED WITH CONFIDENCE")
     elif overall_wr >= 60:
-        print("⚖️ VERDICT: GOOD STRATEGY - NEEDS OPTIMIZATION")
+        print("⚖️ VERDICT: GOOD - NEEDS MINOR TUNING")
     elif overall_wr >= 55:
         print("⚠️ VERDICT: MARGINAL - CONSIDER REVISION")
     else:
-        print("💀 VERDICT: FAILING - REJECT STRATEGY")
+        print(" VERDICT: FAILING - REJECT STRATEGY")
 
 if __name__ == "__main__":
     run_backtest()
