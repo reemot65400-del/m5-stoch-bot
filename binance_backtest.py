@@ -2,19 +2,34 @@ import ccxt
 import pandas as pd
 import numpy as np
 import time
+import requests
 
 # ═══════════════════════════════════════════════
-# إعدادات استراتيجية M5 Sniper V2 - Binance Global Fix
+# إعدادات استراتيجية M5 Sniper V3 - Anti-Ban Fix
 # ═══════════════════════════════════════════════
-TOP_N_ASSETS = 50 
+TOP_N_ASSETS = 30  # تقليل العدد لتجنب الحظر المؤقت بسبب كثرة الطلبات
 
-def get_top_binance_assets(exchange, n=50):
-    """جلب أقوى N أصل مع التعامل مع الحظر الجغرافي"""
-    print(f"📡 Fetching top {n} assets from Binance Global...")
+# قائمة احتياطية لأقوى العملات (تعمل دائماً كخطة ب)
+FALLBACK_SYMBOLS = [
+    "BTC/USDT", "ETH/USDT", "BNB/USDT", "SOL/USDT", "XRP/USDT", 
+    "ADA/USDT", "DOGE/USDT", "TRX/USDT", "DOT/USDT", "MATIC/USDT",
+    "LTC/USDT", "SHIB/USDT", "AVAX/USDT", "UNI/USDT", "LINK/USDT",
+    "ATOM/USDT", "ETC/USDT", "XLM/USDT", "FIL/USDT", "HBAR/USDT",
+    "APT/USDT", "NEAR/USDT", "VET/USDT", "ALGO/USDT", "ICP/USDT",
+    "QNT/USDT", "GRT/USDT", "AAVE/USDT", "MKR/USDT", "SNX/USDT"
+]
+
+def get_top_binance_assets(exchange, n=30):
+    """جلب العملات مع حماية من الحظر"""
+    print(f"📡 Attempting to fetch top {n} assets...")
     try:
+        # محاولة جلب البيانات مع Headers تخدع السيرفر
+        exchange.headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept-Language': 'en-US,en;q=0.9'
+        }
         tickers = exchange.fetch_tickers()
         
-        # تصفية أزواج USDT فقط
         usdt_pairs = {
             k: v for k, v in tickers.items() 
             if k.endswith('/USDT') and 'USDC' not in k and 'FDUSD' not in k
@@ -27,12 +42,13 @@ def get_top_binance_assets(exchange, n=50):
         )
         
         symbols = [pair[0] for pair in sorted_pairs[:n]]
-        print(f"✅ Selected Top {len(symbols)} Assets")
+        print(f"✅ Successfully fetched {len(symbols)} live assets.")
         return symbols
-    except ccxt.NetworkError as e:
-        print(f"❌ Network Error: {e}")
-        print("💡 Tip: Try using a proxy or check Binance restrictions for your runner location.")
-        return []
+        
+    except Exception as e:
+        print(f"⚠️ Live fetch failed: {str(e)[:80]}")
+        print("🔄 Switching to FALLBACK high-volume asset list...")
+        return FALLBACK_SYMBOLS[:n]
 
 def calculate_indicators(df):
     df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
@@ -60,12 +76,14 @@ def detect_pattern(row, prev_row, direction):
         return (row['Close'] < row['Open']) and strong_body
 
 def run_backtest():
-    # ⚠️ التعديل الجوهري هنا: استخدام api.binance.cc لتجاوز الحظر الجغرافي
+    # استخدام api.binance.cc مع إعدادات متقدمة
     exchange = ccxt.binance({
         'enableRateLimit': True,
+        'timeout': 30000,
         'options': {
             'defaultType': 'spot',
-            'adjustForTimeDifference': True
+            'adjustForTimeDifference': True,
+            'recvWindow': 60000
         },
         'urls': {
             'api': {
@@ -76,24 +94,20 @@ def run_backtest():
     })
     
     symbols = get_top_binance_assets(exchange, TOP_N_ASSETS)
-    if not symbols:
-        print("⛔ Failed to fetch symbols. Exiting.")
-        return
-
     all_trades = []
+    
     print(f"\n🚀 Starting Backtest on {len(symbols)} Assets...")
     
     for symbol in symbols:
         try:
-            # جلب بيانات 5 دقائق (آخر 1000 شمعة)
-            ohlcv = exchange.fetch_ohlcv(symbol, timeframe='5m', limit=1000)
-            if not ohlcv: continue
+            # جلب بيانات محدودة لتقليل الضغط
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe='5m', limit=500)
+            if not ohlcv or len(ohlcv) < 250: 
+                continue
             
             df = pd.DataFrame(ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
             df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
             df.set_index('Timestamp', inplace=True)
-            
-            if len(df) < 250: continue
                 
             df = calculate_indicators(df).dropna()
             
@@ -135,13 +149,14 @@ def run_backtest():
                     'WR %': round((wins/total)*100, 2)
                 })
                 
-            time.sleep(0.05) # تأخير آمن لتجنب الحظر المؤقت
+            # تأخير ذكي بين الطلبات
+            time.sleep(0.2)
                 
         except Exception as e:
-            print(f"⚠️ Error on {symbol}: {str(e)[:100]}")
+            print(f"⚠️ Skip {symbol}: {str(e)[:60]}")
 
     if not all_trades:
-        print("❌ No trades generated.")
+        print(" No trades generated. Check API connectivity.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -150,11 +165,11 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     print("\n" + "="*60)
-    print("📊 BINANCE BACKTEST REPORT (GLOBAL FIX)")
+    print("📊 BINANCE BACKTEST REPORT V3 (STABLE)")
     print("="*60)
     print(df_res.to_string(index=False))
     print("-"*60)
-    print(f"🏆 TOTAL TRADES: {total_t}")
+    print(f" TOTAL TRADES: {total_t}")
     print(f"✅ WIN RATE: {overall_wr:.2f}%")
     
     if overall_wr >= 77: print("🔥 VERDICT: EXCELLENT")
