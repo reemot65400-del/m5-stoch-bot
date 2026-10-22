@@ -1,9 +1,9 @@
 name: Binance Backtest
 
 on:
-  workflow_dispatch: # لتشغيله يدوياً عند الحاجة
+  workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0' # تشغيل أسبوعي تلقائي لمتابعة الأداء
+    - cron: '0 0 * * 0'
 
 jobs:
   backtest:
@@ -17,10 +17,10 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install Binance Dependencies
         run: |
-          pip install yfinance pandas numpy
+          pip install -r binance_requirements.txt
 
-      - name: Run Binance Backtest
+      - name: Run Binance Backtest V2
         run: |
           python binance_backtest.py
