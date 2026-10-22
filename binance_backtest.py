@@ -1,38 +1,41 @@
-import ccxt
+import yfinance as yf
 import pandas as pd
 import numpy as np
 import time
 
 # ═══════════════════════════════════════════════
-# إعدادات استراتيجية M5 Sniper - Bybit Stable Fix
+# إعدادات استراتيجية M5 Sniper - YAHOO STABLE FIX
 # ═══════════════════════════════════════════════
-TOP_N_ASSETS = 20  # عدد آمن لتجنب الحظر المؤقت
+# قائمة شاملة بأقوى العملات مع بدائلها الاحتياطية
+ASSET_POOL = [
+    ("BTC-USD", "Bitcoin"), ("ETH-USD", "Ethereum"), ("BNB-USD", "Binance Coin"),
+    ("SOL-USD", "Solana"), ("XRP-USD", "Ripple"), ("ADA-USD", "Cardano"),
+    ("DOGE-USD", "Dogecoin"), ("TRX-USD", "Tron"), ("DOT-USD", "Polkadot"),
+    ("AVAX-USD", "Avalanche"), ("LINK-USD", "Chainlink"), ("MATIC-USD", "Polygon"),
+    ("UNI-USD", "Uniswap"), ("LTC-USD", "Litecoin"), ("ATOM-USD", "Cosmos"),
+    ("FIL-USD", "Filecoin"), ("ETC-USD", "Ethereum Classic"), ("XLM-USD", "Stellar"),
+    ("ALGO-USD", "Algorand"), ("VET-USD", "VeChain")
+]
 
-def get_top_assets(exchange, n=20):
-    """جلب أقوى العملات من Bybit (مفتوحة عالمياً)"""
-    print(f"📡 Fetching top {n} assets from Bybit Global...")
-    try:
-        tickers = exchange.fetch_tickers()
-        
-        # تصفية أزواج USDT فقط
-        usdt_pairs = {
-            k: v for k, v in tickers.items() 
-            if k.endswith('/USDT') and 'USDC' not in k
-        }
-        
-        sorted_pairs = sorted(
-            usdt_pairs.items(), 
-            key=lambda x: x[1].get('quoteVolume', 0), 
-            reverse=True
-        )
-        
-        symbols = [pair[0] for pair in sorted_pairs[:n]]
-        print(f"✅ Selected Top {len(symbols)} Assets: {symbols[:3]}...")
-        return symbols
-        
-    except Exception as e:
-        print(f"❌ Fetch failed: {e}")
-        return []
+def validate_and_get_symbols():
+    """التحقق من توفر الرموز واستبدال المفقود منها"""
+    valid_symbols = []
+    print("🔍 Validating asset availability on Yahoo Finance...")
+    
+    for symbol, name in ASSET_POOL:
+        try:
+            # محاولة جلب شمعة واحدة للتحقق من وجود الرمز
+            test_data = yf.download(symbol, period="1d", interval="1m", progress=False)
+            if not test_data.empty:
+                valid_symbols.append(symbol)
+                print(f"  ✅ {symbol} ({name}) - Available")
+            else:
+                print(f"  ⚠️ {symbol} ({name}) - Not found, skipping")
+        except Exception:
+            print(f"  ❌ {symbol} ({name}) - Error, skipping")
+            
+    print(f"\n✅ Successfully validated {len(valid_symbols)} assets.")
+    return valid_symbols[:20]  # أخذ أقوى 20 عملة متاحة فقط
 
 def calculate_indicators(df):
     df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
@@ -60,30 +63,26 @@ def detect_pattern(row, prev_row, direction):
         return (row['Close'] < row['Open']) and strong_body
 
 def run_backtest():
-    # استخدام Bybit كمصدر بيانات مستقر وعالمي
-    exchange = ccxt.bybit({
-        'enableRateLimit': True,
-        'options': {'defaultType': 'spot'}
-    })
-    
-    symbols = get_top_assets(exchange, TOP_N_ASSETS)
+    symbols = validate_and_get_symbols()
     if not symbols:
-        print(" No symbols found. Exiting.")
+        print("❌ No valid symbols found. Exiting.")
         return
 
     all_trades = []
-    print(f"\n🚀 Starting Backtest on {len(symbols)} Assets...")
+    print(f"\n🚀 Starting Stable Backtest on {len(symbols)} Assets...")
     
     for symbol in symbols:
         try:
-            # جلب بيانات 5 دقائق (آخر 500 شمعة)
-            ohlcv = exchange.fetch_ohlcv(symbol, timeframe='5m', limit=500)
-            if not ohlcv or len(ohlcv) < 250: 
-                continue
+            # جلب بيانات 60 يوم (أقصى حد لـ Yahoo للفريم الصغير)
+            df = yf.download(symbol, period="60d", interval="5m", progress=False)
             
-            df = pd.DataFrame(ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-            df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-            df.set_index('Timestamp', inplace=True)
+            # تنظيف الأعمدة
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+                
+            if df.empty or len(df) < 250: 
+                print(f"⚠️ Insufficient data for {symbol}")
+                continue
                 
             df = calculate_indicators(df).dropna()
             
@@ -125,13 +124,11 @@ def run_backtest():
                     'WR %': round((wins/total)*100, 2)
                 })
                 
-            time.sleep(0.1)
-                
         except Exception as e:
-            print(f"⚠️ Skip {symbol}: {str(e)[:60]}")
+            print(f"⚠️ Error on {symbol}: {str(e)[:60]}")
 
     if not all_trades:
-        print(" No trades generated.")
+        print("❌ No trades generated. Strategy too strict.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -140,16 +137,16 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     print("\n" + "="*60)
-    print("📊 BYBIT BACKTEST REPORT (STABLE GLOBAL DATA)")
+    print(" FINAL STABLE BACKTEST REPORT")
     print("="*60)
     print(df_res.to_string(index=False))
     print("-"*60)
     print(f"🏆 TOTAL TRADES: {total_t}")
     print(f"✅ WIN RATE: {overall_wr:.2f}%")
     
-    if overall_wr >= 77: print(" VERDICT: EXCELLENT STRATEGY")
-    elif overall_wr >= 55: print("⚖️ VERDICT: MARGINAL")
-    else: print("💀 VERDICT: FAILING")
+    if overall_wr >= 77: print("🔥 VERDICT: EXCELLENT STRATEGY")
+    elif overall_wr >= 55: print("️ VERDICT: MARGINAL - NEEDS TUNING")
+    else: print("💀 VERDICT: FAILING - REJECT STRATEGY")
 
 if __name__ == "__main__":
     run_backtest()
