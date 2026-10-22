@@ -3,9 +3,9 @@ import pandas as pd
 import numpy as np
 
 # ═══════════════════════════════════════════════
-# استراتيجية Mean Reversion V3 - مع فلتر ADX
-# فريم: 15 دقيقة | نسبة فوز مستهدفة: 65%+
-# ══════════════════════════════════════════════
+# استراتيجية Mean Reversion V4 - MACD + ADX + BB
+# فريم: 15 دقيقة | نسبة فوز مستهدفة: 70%+
+# ═══════════════════════════════════════════════
 ASSET_POOL = [
     "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", 
     "XRP-USD", "ADA-USD", "DOGE-USD", "TRX-USD", 
@@ -15,7 +15,7 @@ ASSET_POOL = [
 ]
 
 def calculate_indicators(df):
-    """حساب جميع المؤشرات بما فيها ADX"""
+    """حساب جميع المؤشرات: BB, RSI, ADX, MACD"""
     # Bollinger Bands (20, 2)
     df['BB_Middle'] = df['Close'].rolling(window=20).mean()
     bb_std = df['Close'].rolling(window=20).std()
@@ -55,6 +55,13 @@ def calculate_indicators(df):
     
     dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di))
     df['ADX'] = dx.rolling(window=14).mean()
+    
+    # MACD (12, 26, 9) - الفلتر الجديد
+    ema_12 = df['Close'].ewm(span=12, adjust=False).mean()
+    ema_26 = df['Close'].ewm(span=26, adjust=False).mean()
+    df['MACD'] = ema_12 - ema_26
+    df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
+    df['MACD_Hist'] = df['MACD'] - df['MACD_Signal']
     
     return df
 
@@ -109,7 +116,7 @@ def run_backtest():
         return
 
     all_trades = []
-    print(f"\n Starting Mean Reversion V3 Backtest (15m) on {len(valid_symbols)} Assets...")
+    print(f"\n🚀 Starting Mean Reversion V4 Backtest (MACD + ADX + BB) on {len(valid_symbols)} Assets...")
     
     for symbol in valid_symbols:
         try:
@@ -129,28 +136,36 @@ def run_backtest():
                 curr = df.iloc[i]
                 prev = df.iloc[i-1]
                 
-                # ⭐ فلتر ADX الجديد: نتجنب الأسواق الجانبية
+                # فلتر 1: ADX > 25 (سوق في اتجاه)
                 adx_ok = curr['ADX'] > 25
                 
-                # ⭐ فلتر BB Width: نتجنب الأسواق المضغوطة جداً
+                # فلتر 2: BB Width > 0.02 (سوق غير مضغوط)
                 bb_width_ok = curr['BB_Width'] > 0.02
+                
+                # ⭐ فلتر 3: MACD Histogram يؤكد الانعكاس
+                # للشراء: Histogram سالب ويبدأ بالارتفاع
+                macd_long = (curr['MACD_Hist'] < 0) and (curr['MACD_Hist'] > prev['MACD_Hist'])
+                # للبيع: Histogram موجب ويبدأ بالانخفاض
+                macd_short = (curr['MACD_Hist'] > 0) and (curr['MACD_Hist'] < prev['MACD_Hist'])
                 
                 if not (adx_ok and bb_width_ok):
                     continue
                 
-                # شروط LONG
+                # شروط LONG (5 شروط متزامنة)
                 long_condition = (
                     curr['Close'] <= curr['BB_Lower'] and
                     curr['RSI'] < 30 and
                     curr['Volume'] > curr['Vol_MA'] and
+                    macd_long and
                     detect_reversal_pattern(curr, prev, 'LONG')
                 )
                 
-                # شروط SHORT
+                # شروط SHORT (5 شروط متزامنة)
                 short_condition = (
                     curr['Close'] >= curr['BB_Upper'] and
                     curr['RSI'] > 70 and
                     curr['Volume'] > curr['Vol_MA'] and
+                    macd_short and
                     detect_reversal_pattern(curr, prev, 'SHORT')
                 )
                 
@@ -162,8 +177,6 @@ def run_backtest():
                 
                 if signal:
                     entry_price = curr['Close']
-                    
-                    # ⭐ تمديد المدة إلى 5 شموع (75 دقيقة)
                     exit_price = df.iloc[i+5]['Close']
                     
                     if signal == 'LONG':
@@ -192,7 +205,7 @@ def run_backtest():
             print(f"⚠️ Error on {symbol}: {str(e)[:50]}")
 
     if not all_trades:
-        print("❌ No trades generated. Try relaxing ADX filter.")
+        print("❌ No trades generated. MACD filter too strict.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -202,27 +215,27 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     avg_trades = total_t / len(all_trades)
-    
-    # إحصائيات إضافية
     assets_above_60 = len(df_res[df_res['WR %'] >= 60])
+    assets_above_70 = len(df_res[df_res['WR %'] >= 70])
     assets_below_50 = len(df_res[df_res['WR %'] < 50])
     
     print("\n" + "="*70)
-    print("📊 MEAN REVERSION V3 BACKTEST (ADX FILTER + 75min HOLD)")
+    print("📊 MEAN REVERSION V4 BACKTEST (MACD + ADX + BB + RSI + VOL)")
     print("="*70)
     print(df_res.to_string(index=False))
     print("-"*70)
     print(f"🔢 ASSETS TESTED: {len(all_trades)}")
-    print(f" ASSETS WITH WR ≥ 60%: {assets_above_60}")
+    print(f"🌟 ASSETS WITH WR ≥ 70%: {assets_above_70}")
+    print(f"✅ ASSETS WITH WR ≥ 60%: {assets_above_60}")
     print(f"📉 ASSETS WITH WR < 50%: {assets_below_50}")
     print(f"📊 AVG TRADES/ASSET: {avg_trades:.1f}")
     print(f"🏆 TOTAL TRADES: {total_t}")
     print(f"✅ WINS: {total_w} | ❌ LOSSES: {total_l}")
-    print(f"🎯 WIN RATE: {overall_wr:.2f}%")
+    print(f" WIN RATE: {overall_wr:.2f}%")
     print("-"*70)
     
     if overall_wr >= 70:
-        print("🔥 VERDICT: EXCELLENT - READY FOR LIVE TRADING!")
+        print(" VERDICT: EXCELLENT - READY FOR LIVE TRADING!")
     elif overall_wr >= 65:
         print("✅ VERDICT: STRONG - RECOMMENDED WITH CONFIDENCE")
     elif overall_wr >= 60:
