@@ -1,38 +1,40 @@
 import ccxt
 import pandas as pd
 import numpy as np
-from datetime import datetime, timedelta
 import time
 
 # ═══════════════════════════════════════════════
-# إعدادات استراتيجية M5 Sniper V2 - Binance Direct
+# إعدادات استراتيجية M5 Sniper V2 - Binance Global Fix
 # ═══════════════════════════════════════════════
-TOP_N_ASSETS = 50  # اختبار أقوى 50 عملة حسب الحجم فقط
+TOP_N_ASSETS = 50 
 
 def get_top_binance_assets(exchange, n=50):
-    """جلب أقوى N أصل حسب حجم التداول من بينانس مباشرة"""
-    print(f"📡 Fetching top {n} assets from Binance by volume...")
-    tickers = exchange.fetch_tickers()
-    
-    # تصفية أزواج USDT فقط واستبعاد العملات المستقرة
-    usdt_pairs = {
-        k: v for k, v in tickers.items() 
-        if k.endswith('/USDT') and 'USDC' not in k and 'FDUSD' not in k
-    }
-    
-    # ترتيب تنازلي حسب حجم التداول (quoteVolume)
-    sorted_pairs = sorted(
-        usdt_pairs.items(), 
-        key=lambda x: x[1].get('quoteVolume', 0), 
-        reverse=True
-    )
-    
-    symbols = [pair[0] for pair in sorted_pairs[:n]]
-    print(f"✅ Selected Top {len(symbols)} Assets: {symbols[:5]}...")
-    return symbols
+    """جلب أقوى N أصل مع التعامل مع الحظر الجغرافي"""
+    print(f"📡 Fetching top {n} assets from Binance Global...")
+    try:
+        tickers = exchange.fetch_tickers()
+        
+        # تصفية أزواج USDT فقط
+        usdt_pairs = {
+            k: v for k, v in tickers.items() 
+            if k.endswith('/USDT') and 'USDC' not in k and 'FDUSD' not in k
+        }
+        
+        sorted_pairs = sorted(
+            usdt_pairs.items(), 
+            key=lambda x: x[1].get('quoteVolume', 0), 
+            reverse=True
+        )
+        
+        symbols = [pair[0] for pair in sorted_pairs[:n]]
+        print(f"✅ Selected Top {len(symbols)} Assets")
+        return symbols
+    except ccxt.NetworkError as e:
+        print(f"❌ Network Error: {e}")
+        print("💡 Tip: Try using a proxy or check Binance restrictions for your runner location.")
+        return []
 
 def calculate_indicators(df):
-    """حساب المؤشرات الفنية بدقة عالية"""
     df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
     df['EMA_200'] = df['Close'].ewm(span=200, adjust=False).mean()
     
@@ -46,7 +48,6 @@ def calculate_indicators(df):
     return df
 
 def detect_pattern(row, prev_row, direction):
-    """التحقق من نماذج الشموع اليابانية القوية"""
     body_curr = abs(row['Close'] - row['Open'])
     range_curr = row['High'] - row['Low']
     if range_curr == 0: return False
@@ -58,38 +59,41 @@ def detect_pattern(row, prev_row, direction):
     else:
         return (row['Close'] < row['Open']) and strong_body
 
-def fetch_ohlcv(exchange, symbol, timeframe='5m', limit=1000):
-    """جلب بيانات الشموع من بينانس مباشرة"""
-    try:
-        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
-        df = pd.DataFrame(ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-        df.set_index('Timestamp', inplace=True)
-        return df
-    except Exception as e:
-        print(f"⚠️ Failed to fetch {symbol}: {e}")
-        return pd.DataFrame()
-
 def run_backtest():
+    # ⚠️ التعديل الجوهري هنا: استخدام api.binance.cc لتجاوز الحظر الجغرافي
     exchange = ccxt.binance({
         'enableRateLimit': True,
-        'options': {'defaultType': 'spot'}
+        'options': {
+            'defaultType': 'spot',
+            'adjustForTimeDifference': True
+        },
+        'urls': {
+            'api': {
+                'public': 'https://api.binance.cc/api/v3',
+                'private': 'https://api.binance.cc/api/v3',
+            }
+        }
     })
     
     symbols = get_top_binance_assets(exchange, TOP_N_ASSETS)
+    if not symbols:
+        print("⛔ Failed to fetch symbols. Exiting.")
+        return
+
     all_trades = []
-    
-    print(f"\n🚀 Starting Binance Backtest V2 on {len(symbols)} Assets...")
+    print(f"\n🚀 Starting Backtest on {len(symbols)} Assets...")
     
     for symbol in symbols:
         try:
-            # جلب آخر 1000 شمعة (حوالي 3.5 يوم لفريم 5 دقائق)
-            # ملاحظة: للحصول على عامين نحتاج لـ ~210,000 شمعة وهو مستحيل دفعة واحدة
-            # لذلك نختبر على فترة مكثفة قصيرة لضمان دقة المؤشرات
-            df = fetch_ohlcv(exchange, symbol, timeframe='5m', limit=1000)
+            # جلب بيانات 5 دقائق (آخر 1000 شمعة)
+            ohlcv = exchange.fetch_ohlcv(symbol, timeframe='5m', limit=1000)
+            if not ohlcv: continue
             
-            if df.empty or len(df) < 250: 
-                continue
+            df = pd.DataFrame(ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
+            df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
+            df.set_index('Timestamp', inplace=True)
+            
+            if len(df) < 250: continue
                 
             df = calculate_indicators(df).dropna()
             
@@ -131,11 +135,10 @@ def run_backtest():
                     'WR %': round((wins/total)*100, 2)
                 })
                 
-            # تأخير بسيط لتجنب حظر الـ API
-            time.sleep(0.1)
+            time.sleep(0.05) # تأخير آمن لتجنب الحظر المؤقت
                 
         except Exception as e:
-            print(f"⚠️ Error processing {symbol}: {e}")
+            print(f"⚠️ Error on {symbol}: {str(e)[:100]}")
 
     if not all_trades:
         print("❌ No trades generated.")
@@ -147,19 +150,16 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     print("\n" + "="*60)
-    print("📊 BINANCE M5 SNIPER BACKTEST REPORT V2")
+    print("📊 BINANCE BACKTEST REPORT (GLOBAL FIX)")
     print("="*60)
     print(df_res.to_string(index=False))
     print("-"*60)
-    print(f"🏆 TOTAL TRADES EXECUTED: {total_t}")
-    print(f"✅ OVERALL WIN RATE: {overall_wr:.2f}%")
+    print(f"🏆 TOTAL TRADES: {total_t}")
+    print(f"✅ WIN RATE: {overall_wr:.2f}%")
     
-    if overall_wr >= 77:
-        print("🔥 VERDICT: EXCELLENT STRATEGY (Target Achieved!)")
-    elif overall_wr >= 55:
-        print("️ VERDICT: MARGINAL (Needs Parameter Tuning)")
-    else:
-        print(" VERDICT: FAILING (Strategy Rejected)")
+    if overall_wr >= 77: print("🔥 VERDICT: EXCELLENT")
+    elif overall_wr >= 55: print("⚖️ VERDICT: MARGINAL")
+    else: print("💀 VERDICT: FAILING")
 
 if __name__ == "__main__":
     run_backtest()
