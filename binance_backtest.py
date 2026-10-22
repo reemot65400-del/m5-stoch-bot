@@ -1,21 +1,53 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
+from datetime import datetime, timedelta
 
 # ═══════════════════════════════════════════════
-# استراتيجية Mean Reversion V3 - مع فلتر ADX
-# فريم: 15 دقيقة | نسبة فوز مستهدفة: 65%+
-# ══════════════════════════════════════════════
+# استراتيجية Mean Reversion V5 - Pump/Dump Detection
+# فريم: 15 دقيقة | كشف العملات المتحركة بقوة
+# ═══════════════════════════════════════════════
 ASSET_POOL = [
     "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", 
     "XRP-USD", "ADA-USD", "DOGE-USD", "TRX-USD", 
     "DOT-USD", "AVAX-USD", "LINK-USD", "MATIC-USD", 
     "UNI-USD", "LTC-USD", "ATOM-USD", "FIL-USD", 
-    "ETC-USD", "XLM-USD", "ALGO-USD", "VET-USD"
+    "ETC-USD", "XLM-USD", "ALGO-USD", "VET-USD",
+    "SHIB-USD", "PEPE-USD", "ARB-USD", "OP-USD",
+    "SUI-USD", "SEI-USD", "TIA-USD", "JUP-USD"
 ]
 
+def detect_pump_dump(df, lookback_period=24):
+    """
+    كشف العملات التي تشهد بومب أو دب
+    lookback_period: عدد الساعات للنظر للخلف (افتراضي 24 ساعة)
+    """
+    # حساب عدد الشموع (كل شمعة 15 دقيقة = 4 شموع في الساعة)
+    candles = lookback_period * 4
+    
+    if len(df) < candles:
+        return False, 0, 0
+    
+    # أخذ آخر N شمعة
+    recent = df.tail(candles)
+    
+    # حساب نسبة التغير في السعر
+    price_change = ((recent['Close'].iloc[-1] - recent['Close'].iloc[0]) / recent['Close'].iloc[0]) * 100
+    
+    # حساب متوسط الحجم
+    avg_volume = recent['Volume'].mean()
+    current_volume = recent['Volume'].iloc[-1]
+    volume_ratio = current_volume / avg_volume if avg_volume > 0 else 0
+    
+    # شروط البومب/الدب:
+    # 1. تغير سعري أكثر من 5% (يمكن تعديله)
+    # 2. حجم تداول أعلى من المتوسط بـ 1.5 مرة على الأقل
+    is_pump_dump = (abs(price_change) >= 5) and (volume_ratio >= 1.5)
+    
+    return is_pump_dump, price_change, volume_ratio
+
 def calculate_indicators(df):
-    """حساب جميع المؤشرات بما فيها ADX"""
+    """حساب جميع المؤشرات: BB, RSI, ADX, MACD"""
     # Bollinger Bands (20, 2)
     df['BB_Middle'] = df['Close'].rolling(window=20).mean()
     bb_std = df['Close'].rolling(window=20).std()
@@ -33,7 +65,7 @@ def calculate_indicators(df):
     # Volume MA (20)
     df['Vol_MA'] = df['Volume'].rolling(window=20).mean()
     
-    # ADX (14) - مؤشر قوة الاتجاه
+    # ADX (14)
     high = df['High']
     low = df['Low']
     close = df['Close']
@@ -55,6 +87,13 @@ def calculate_indicators(df):
     
     dx = 100 * ((plus_di - minus_di).abs() / (plus_di + minus_di))
     df['ADX'] = dx.rolling(window=14).mean()
+    
+    # MACD (12, 26, 9)
+    ema_12 = df['Close'].ewm(span=12, adjust=False).mean()
+    ema_26 = df['Close'].ewm(span=26, adjust=False).mean()
+    df['MACD'] = ema_12 - ema_26
+    df['MACD_Signal'] = df['MACD'].ewm(span=9, adjust=False).mean()
+    df['MACD_Hist'] = df['MACD'] - df['MACD_Signal']
     
     return df
 
@@ -93,8 +132,11 @@ def detect_reversal_pattern(row, prev_row, direction):
 
 def run_backtest():
     valid_symbols = []
-    print("🔍 Validating assets on Yahoo Finance...")
+    pump_dump_symbols = []
     
+    print("🔍 المرحلة 1: التحقق من توفر الأصول على Yahoo Finance...")
+    
+    # التحقق من توفر الرموز
     for symbol in ASSET_POOL:
         try:
             test = yf.download(symbol, period="1d", interval="15m", progress=False)
@@ -103,16 +145,54 @@ def run_backtest():
         except:
             pass
             
-    print(f"✅ Found {len(valid_symbols)} valid assets.")
-    if not valid_symbols:
-        print("❌ No valid assets found. Exiting.")
-        return
-
-    all_trades = []
-    print(f"\n Starting Mean Reversion V3 Backtest (15m) on {len(valid_symbols)} Assets...")
+    print(f"✅ تم العثور على {len(valid_symbols)} أصلاً صالحاً.")
     
+    if not valid_symbols:
+        print("❌ لم يتم العثور على أي أصول صالحة. إنهاء.")
+        return
+    
+    print("\n🚀 المرحلة 2: كشف العملات التي تشهد بومب/دب (آخر 24 ساعة)...")
+    
+    # فحص كل عملة لمعرفة إذا كانت تشهد بومب أو دب
     for symbol in valid_symbols:
         try:
+            df = yf.download(symbol, period="5d", interval="15m", progress=False)
+            
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            
+            if df.empty or len(df) < 96:  # 96 شمعة = 24 ساعة
+                continue
+            
+            is_pump_dump, price_change, volume_ratio = detect_pump_dump(df, lookback_period=24)
+            
+            if is_pump_dump:
+                pump_dump_symbols.append({
+                    'symbol': symbol,
+                    'price_change': round(price_change, 2),
+                    'volume_ratio': round(volume_ratio, 2),
+                    'type': 'PUMP' if price_change > 0 else 'DUMP'
+                })
+                print(f"  🔥 {symbol}: {price_change:+.2f}% | Volume: {volume_ratio:.1f}x | Type: {'PUMP' if price_change > 0 else 'DUMP'}")
+                
+        except Exception as e:
+            print(f"  ⚠️ خطأ في {symbol}: {str(e)[:50]}")
+    
+    print(f"\n✅ تم اكتشاف {len(pump_dump_symbols)} عملة تشهد بومب/دب")
+    
+    if not pump_dump_symbols:
+        print("⚠️ لم يتم العثور على عملات تشهد بومب/دب حالياً. استخدام جميع العملات الصالحة.")
+        test_symbols = valid_symbols[:10]  # استخدام أول 10 عملات
+    else:
+        test_symbols = [item['symbol'] for item in pump_dump_symbols]
+    
+    print(f"\n🎯 المرحلة 3: بدء الاختبار الخلفي على {len(test_symbols)} عملة متحركة...")
+    
+    all_trades = []
+    
+    for symbol in test_symbols:
+        try:
+            # جلب بيانات 60 يوم على فريم 15 دقيقة
             df = yf.download(symbol, period="60d", interval="15m", progress=False)
             
             if isinstance(df.columns, pd.MultiIndex):
@@ -129,11 +209,12 @@ def run_backtest():
                 curr = df.iloc[i]
                 prev = df.iloc[i-1]
                 
-                # ⭐ فلتر ADX الجديد: نتجنب الأسواق الجانبية
-                adx_ok = curr['ADX'] > 25
+                # الفلاتر
+                adx_ok = curr['ADX'] > 20
+                bb_width_ok = curr['BB_Width'] > 0.01
                 
-                # ⭐ فلتر BB Width: نتجنب الأسواق المضغوطة جداً
-                bb_width_ok = curr['BB_Width'] > 0.02
+                macd_long = curr['MACD_Hist'] > prev['MACD_Hist']
+                macd_short = curr['MACD_Hist'] < prev['MACD_Hist']
                 
                 if not (adx_ok and bb_width_ok):
                     continue
@@ -141,16 +222,18 @@ def run_backtest():
                 # شروط LONG
                 long_condition = (
                     curr['Close'] <= curr['BB_Lower'] and
-                    curr['RSI'] < 30 and
-                    curr['Volume'] > curr['Vol_MA'] and
+                    curr['RSI'] < 35 and
+                    curr['Volume'] > curr['Vol_MA'] * 0.8 and
+                    macd_long and
                     detect_reversal_pattern(curr, prev, 'LONG')
                 )
                 
                 # شروط SHORT
                 short_condition = (
                     curr['Close'] >= curr['BB_Upper'] and
-                    curr['RSI'] > 70 and
-                    curr['Volume'] > curr['Vol_MA'] and
+                    curr['RSI'] > 65 and
+                    curr['Volume'] > curr['Vol_MA'] * 0.8 and
+                    macd_short and
                     detect_reversal_pattern(curr, prev, 'SHORT')
                 )
                 
@@ -162,8 +245,6 @@ def run_backtest():
                 
                 if signal:
                     entry_price = curr['Close']
-                    
-                    # ⭐ تمديد المدة إلى 5 شموع (75 دقيقة)
                     exit_price = df.iloc[i+5]['Close']
                     
                     if signal == 'LONG':
@@ -189,10 +270,10 @@ def run_backtest():
                 })
                 
         except Exception as e:
-            print(f"⚠️ Error on {symbol}: {str(e)[:50]}")
+            print(f"⚠️ خطأ في {symbol}: {str(e)[:50]}")
 
     if not all_trades:
-        print("❌ No trades generated. Try relaxing ADX filter.")
+        print("❌ لم يتم توليد أي صفقات.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -202,18 +283,18 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     avg_trades = total_t / len(all_trades)
-    
-    # إحصائيات إضافية
     assets_above_60 = len(df_res[df_res['WR %'] >= 60])
+    assets_above_70 = len(df_res[df_res['WR %'] >= 70])
     assets_below_50 = len(df_res[df_res['WR %'] < 50])
     
     print("\n" + "="*70)
-    print("📊 MEAN REVERSION V3 BACKTEST (ADX FILTER + 75min HOLD)")
+    print("📊 MEAN REVERSION V5 BACKTEST (PUMP/DUMP DETECTION)")
     print("="*70)
     print(df_res.to_string(index=False))
     print("-"*70)
-    print(f"🔢 ASSETS TESTED: {len(all_trades)}")
-    print(f" ASSETS WITH WR ≥ 60%: {assets_above_60}")
+    print(f"🔥 PUMP/DUMP ASSETS TESTED: {len(all_trades)}")
+    print(f"🌟 ASSETS WITH WR ≥ 70%: {assets_above_70}")
+    print(f"✅ ASSETS WITH WR ≥ 60%: {assets_above_60}")
     print(f"📉 ASSETS WITH WR < 50%: {assets_below_50}")
     print(f"📊 AVG TRADES/ASSET: {avg_trades:.1f}")
     print(f"🏆 TOTAL TRADES: {total_t}")
@@ -226,11 +307,11 @@ def run_backtest():
     elif overall_wr >= 65:
         print("✅ VERDICT: STRONG - RECOMMENDED WITH CONFIDENCE")
     elif overall_wr >= 60:
-        print("⚖️ VERDICT: GOOD - NEEDS MINOR TUNING")
+        print("️ VERDICT: GOOD - NEEDS MINOR TUNING")
     elif overall_wr >= 55:
         print("⚠️ VERDICT: MARGINAL - CONSIDER REVISION")
     else:
-        print(" VERDICT: FAILING - REJECT STRATEGY")
+        print("💀 VERDICT: FAILING - REJECT STRATEGY")
 
 if __name__ == "__main__":
     run_backtest()
