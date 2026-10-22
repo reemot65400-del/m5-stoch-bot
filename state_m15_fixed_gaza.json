@@ -15,16 +15,7 @@
     "AUDJPY=X": "2026-10-21T14:00:00+00:00",
     "EURAUD=X": "2026-10-22T17:30:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "8f2d1e41",
-      "symbol": "GBPUSD=X",
-      "type": "CALL",
-      "entry_price": 1.3393335342407227,
-      "entry_time": "2026-10-22T20:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -295,6 +286,15 @@
       "exit_time": "2026-10-22T18:30:00+00:00",
       "win": true,
       "pips": 0.70037841796875
+    },
+    {
+      "id": "8f2d1e41",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-22T20:00:00+00:00",
+      "exit_time": "2026-10-22T20:30:00+00:00",
+      "win": true,
+      "pips": 4.127025604248047
     }
   ],
   "daily_counter_date": "2026-10-22",
