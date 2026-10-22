@@ -1,41 +1,17 @@
 import yfinance as yf
 import pandas as pd
 import numpy as np
-import time
 
 # ═══════════════════════════════════════════════
-# إعدادات استراتيجية M5 Sniper - YAHOO STABLE FIX
+# إعدادات استراتيجية M5 Sniper - YAHOO STABLE
 # ═══════════════════════════════════════════════
-# قائمة شاملة بأقوى العملات مع بدائلها الاحتياطية
 ASSET_POOL = [
-    ("BTC-USD", "Bitcoin"), ("ETH-USD", "Ethereum"), ("BNB-USD", "Binance Coin"),
-    ("SOL-USD", "Solana"), ("XRP-USD", "Ripple"), ("ADA-USD", "Cardano"),
-    ("DOGE-USD", "Dogecoin"), ("TRX-USD", "Tron"), ("DOT-USD", "Polkadot"),
-    ("AVAX-USD", "Avalanche"), ("LINK-USD", "Chainlink"), ("MATIC-USD", "Polygon"),
-    ("UNI-USD", "Uniswap"), ("LTC-USD", "Litecoin"), ("ATOM-USD", "Cosmos"),
-    ("FIL-USD", "Filecoin"), ("ETC-USD", "Ethereum Classic"), ("XLM-USD", "Stellar"),
-    ("ALGO-USD", "Algorand"), ("VET-USD", "VeChain")
+    "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", 
+    "XRP-USD", "ADA-USD", "DOGE-USD", "TRX-USD", 
+    "DOT-USD", "AVAX-USD", "LINK-USD", "MATIC-USD", 
+    "UNI-USD", "LTC-USD", "ATOM-USD", "FIL-USD", 
+    "ETC-USD", "XLM-USD", "ALGO-USD", "VET-USD"
 ]
-
-def validate_and_get_symbols():
-    """التحقق من توفر الرموز واستبدال المفقود منها"""
-    valid_symbols = []
-    print("🔍 Validating asset availability on Yahoo Finance...")
-    
-    for symbol, name in ASSET_POOL:
-        try:
-            # محاولة جلب شمعة واحدة للتحقق من وجود الرمز
-            test_data = yf.download(symbol, period="1d", interval="1m", progress=False)
-            if not test_data.empty:
-                valid_symbols.append(symbol)
-                print(f"  ✅ {symbol} ({name}) - Available")
-            else:
-                print(f"  ⚠️ {symbol} ({name}) - Not found, skipping")
-        except Exception:
-            print(f"  ❌ {symbol} ({name}) - Error, skipping")
-            
-    print(f"\n✅ Successfully validated {len(valid_symbols)} assets.")
-    return valid_symbols[:20]  # أخذ أقوى 20 عملة متاحة فقط
 
 def calculate_indicators(df):
     df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
@@ -63,25 +39,34 @@ def detect_pattern(row, prev_row, direction):
         return (row['Close'] < row['Open']) and strong_body
 
 def run_backtest():
-    symbols = validate_and_get_symbols()
-    if not symbols:
-        print("❌ No valid symbols found. Exiting.")
+    valid_symbols = []
+    print("🔍 Validating assets on Yahoo Finance...")
+    
+    # التحقق من توفر الرموز قبل البدء
+    for symbol in ASSET_POOL:
+        try:
+            test = yf.download(symbol, period="1d", interval="1m", progress=False)
+            if not test.empty:
+                valid_symbols.append(symbol)
+        except:
+            pass
+            
+    print(f"✅ Found {len(valid_symbols)} valid assets.")
+    if not valid_symbols:
+        print("❌ No valid assets found. Exiting.")
         return
 
     all_trades = []
-    print(f"\n🚀 Starting Stable Backtest on {len(symbols)} Assets...")
+    print(f"\n🚀 Starting Backtest on {len(valid_symbols)} Assets...")
     
-    for symbol in symbols:
+    for symbol in valid_symbols:
         try:
-            # جلب بيانات 60 يوم (أقصى حد لـ Yahoo للفريم الصغير)
             df = yf.download(symbol, period="60d", interval="5m", progress=False)
             
-            # تنظيف الأعمدة
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
                 
             if df.empty or len(df) < 250: 
-                print(f"⚠️ Insufficient data for {symbol}")
                 continue
                 
             df = calculate_indicators(df).dropna()
@@ -125,10 +110,10 @@ def run_backtest():
                 })
                 
         except Exception as e:
-            print(f"⚠️ Error on {symbol}: {str(e)[:60]}")
+            print(f"⚠️ Error on {symbol}: {str(e)[:50]}")
 
     if not all_trades:
-        print("❌ No trades generated. Strategy too strict.")
+        print("❌ No trades generated.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -137,16 +122,16 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     print("\n" + "="*60)
-    print(" FINAL STABLE BACKTEST REPORT")
+    print(" FINAL BACKTEST REPORT (YAHOO STABLE)")
     print("="*60)
     print(df_res.to_string(index=False))
     print("-"*60)
     print(f"🏆 TOTAL TRADES: {total_t}")
     print(f"✅ WIN RATE: {overall_wr:.2f}%")
     
-    if overall_wr >= 77: print("🔥 VERDICT: EXCELLENT STRATEGY")
-    elif overall_wr >= 55: print("️ VERDICT: MARGINAL - NEEDS TUNING")
-    else: print("💀 VERDICT: FAILING - REJECT STRATEGY")
+    if overall_wr >= 77: print("🔥 VERDICT: EXCELLENT")
+    elif overall_wr >= 55: print("⚖️ VERDICT: MARGINAL")
+    else: print("💀 VERDICT: FAILING")
 
 if __name__ == "__main__":
     run_backtest()
