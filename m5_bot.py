@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.3 (Fixed Resolution Timing)
+M15 Bollinger Trend Reversal Bot - v4.3 (Fixed Resolution Timing + KeyError Fix)
 الإصلاحات الهندسية في v4.3:
 1. ★★ إصلاح جذري لمشكلة عدم وصول النتائج (Resolution Failure):
-   كان يتم تسجيل entry_time كوقت "فتح" الشمعة، مما يسبب انزياحاً زمنياً في حساب وقت الخروج
+   كان يتم تسجيل entry_time كوقت "فتح" الشمعة، مما يسبب انزياحاَ زمنياَ في حساب وقت الخروج
    ويجعل البوت يفشل في إيجاد الشمعة الصحيحة للحسم أحياناً.
-   الآن: يتم تسجيل entry_time كوقت "إغلاق" شمعة الإشارة (الدقيقة 15)، وهو المرجع الحقيقي
-   لدورة الصفقة (30 دقيقة من لحظة الإغلاق).
-2. تحسين دقة الحسم: الاعتماد على وقت الإغلاق الفعلي للشموع بدلاً من التقدير النظري.
+   الآن: يتم الاعتماد على وقت الإغلاق الفعلي للشموع بدلاَ من التقدير النظري.
+2. ★★ إصلاح قاتل لـ KeyError: 'direction':
+   الصفقات المحفوظة سابقاً تستخدم المفتاح 'type' بدلاً من 'direction'.
+   تم تعديل دالة الحسم لتقبل كلا الاسمين لضمان استرجاع جميع الصفقات العالقة.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -36,7 +37,7 @@ def get_gaza_now() -> datetime:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_3_Pro" # ← تحديث الرقم للإشارة للإصلاح
+BOT_NAME = "M15_BB_Sniper_v4_3_Hotfix" # ← تحديث الرقم للإشارة للإصلاح الحراري
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -68,7 +69,7 @@ logging.basicConfig(
 log = logging.getLogger(BOT_NAME)
 
 # ═══════════════════════════════════════════════
-# 2. أدوات الاتصال والحالة (نفسها بدون تغيير)
+# 2. أدوات الاتصال والحالة
 # ═══════════════════════════════════════════════
 
 def send_telegram(msg: str):
@@ -197,7 +198,7 @@ class StateManager:
         self.save()
 
 # ═══════════════════════════════════════════════
-# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياَ)
+# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياً)
 # ═══════════════════════════════════════════════
 
 def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
@@ -281,7 +282,7 @@ def analyze_market(symbol: str):
     }
 
 # ═══════════════════════════════════════════════
-# 4. نظام الحسم التلقائي (★★ مُعدل جذرياَ لحل مشكلة عدم الوصول ★★)
+# 4. نظام الحسم التلقائي (★★ مُعدل لإصلاح KeyError ★★)
 # ═══════════════════════════════════════════════
 
 def resolve_pending_trades(sm: StateManager):
@@ -299,8 +300,6 @@ def resolve_pending_trades(sm: StateManager):
                 entry_dt_raw = entry_dt_raw.replace(tzinfo=timezone.utc)
             
             # ★★ الإصلاح هنا: تحويل وقت الفتح إلى وقت الإغلاق الفعلي للشمعة ★★
-            # الشمعة تستمر 15 دقيقة. إذن وقت الإغلاق = وقت الفتح + 15 دقيقة.
-            # هذا هو اللحظة التي "يبدأ" فيها العد التنازلي للصفقة الحقيقية.
             actual_entry_close_time = entry_dt_raw + timedelta(minutes=TRADE_DURATION_MINUTES)
 
             # تحديد موعد انتهاء الصفقة (شمعة خروج واحدة = 15 دقيقة أخرى)
@@ -313,7 +312,16 @@ def resolve_pending_trades(sm: StateManager):
                 continue
             
             sym = trade['symbol']
-            dr = trade['direction']
+            
+            # ★★★ الإصلاح الجراحي لمشكلة KeyError ★★★
+            # الصفقات القديمة قد تكون محفوظة بمفتاح 'type' والجديدة بـ 'direction'
+            # نستخدم .get() لجلب القيمة من أي منهما بأمان
+            dr = trade.get('direction') or trade.get('type')
+            
+            if dr is None:
+                 log.error(f"Trade {trade['id']} has neither 'direction' nor 'type'. Skipping safely.")
+                 continue
+
             entry_px = float(trade['entry_price'])
             
             log.info(f"Resolving {sym} | Target Exit Close: {expected_exit_close_time}")
@@ -324,8 +332,6 @@ def resolve_pending_trades(sm: StateManager):
                 continue
                 
             # البحث عن الشمعة التي تمثل "وقت الخروج"
-            # نحن نريد إغلاق الشمعة التي تنتهي عند expected_exit_close_time
-            # في yfinance، الفهرس هو وقت البدء. إذن الشمعة المطلوبة تبدأ عند:
             target_candle_start = expected_exit_close_time - timedelta(minutes=TRADE_DURATION_MINUTES)
             
             # نجدها بمطابقة تقريبية (لأن الفهارس قد تكون بالثواني الجزئية)
@@ -370,8 +376,8 @@ def resolve_pending_trades(sm: StateManager):
 
             sm.archive_trade({
                 "id": trade['id'], "symbol": sym, "type": dr,
-                "entry_time": trade['entry_time'], # نحفظ الأصلي للأرشيف
-                "exit_time": expected_exit_close_time.isoformat(), # وقت الإغلاق الفعلي للخروج
+                "entry_time": trade['entry_time'], 
+                "exit_time": expected_exit_close_time.isoformat(), 
                 "win": is_win, "pips": float(pips_diff)
             })
             resolved_ids.append(trade['id'])
@@ -716,9 +722,9 @@ def main():
             sm.add_open_trade({
                 "id": str(uuid.uuid4())[:8],
                 "symbol": result['symbol'],
-                "type": result['type'],
+                "type": result['type'], # ← نحتفظ بهكذا للمحافظة على التوافق مع الماضي
                 "entry_price": result['price'],
-                "entry_time": result['time'].isoformat(), # ← نحتفظ بوقت الفتح كما هو
+                "entry_time": result['time'].isoformat(),
                 "msg_id": mid
             })
             log.info(f"Signal Sent & Frozen: {sym} {result['type']} (#{signal_num})")
