@@ -1,31 +1,47 @@
-import yfinance as yf
+import ccxt
 import pandas as pd
 import numpy as np
-import sys
+from datetime import datetime, timedelta
+import time
 
 # ═══════════════════════════════════════════════
-# إعدادات استراتيجية M5 Sniper للمنصة
+# إعدادات استراتيجية M5 Sniper V2 - Binance Direct
 # ═══════════════════════════════════════════════
-SYMBOLS = [
-    "BTC-USD", "ETH-USD", "BNB-USD", "SOL-USD", 
-    "ADA-USD", "XRP-USD", "DOT-USD", "LINK-USD", 
-    "AVAX-USD", "LTC-USD", "UNI-USD", "ATOM-USD", 
-    "FIL-USD", "MATIC-USD"
-]
+TOP_N_ASSETS = 50  # اختبار أقوى 50 عملة حسب الحجم فقط
+
+def get_top_binance_assets(exchange, n=50):
+    """جلب أقوى N أصل حسب حجم التداول من بينانس مباشرة"""
+    print(f"📡 Fetching top {n} assets from Binance by volume...")
+    tickers = exchange.fetch_tickers()
+    
+    # تصفية أزواج USDT فقط واستبعاد العملات المستقرة
+    usdt_pairs = {
+        k: v for k, v in tickers.items() 
+        if k.endswith('/USDT') and 'USDC' not in k and 'FDUSD' not in k
+    }
+    
+    # ترتيب تنازلي حسب حجم التداول (quoteVolume)
+    sorted_pairs = sorted(
+        usdt_pairs.items(), 
+        key=lambda x: x[1].get('quoteVolume', 0), 
+        reverse=True
+    )
+    
+    symbols = [pair[0] for pair in sorted_pairs[:n]]
+    print(f"✅ Selected Top {len(symbols)} Assets: {symbols[:5]}...")
+    return symbols
 
 def calculate_indicators(df):
     """حساب المؤشرات الفنية بدقة عالية"""
     df['EMA_50'] = df['Close'].ewm(span=50, adjust=False).mean()
     df['EMA_200'] = df['Close'].ewm(span=200, adjust=False).mean()
     
-    # حساب RSI بطريقة Wilder's Smoothing القياسية
     delta = df['Close'].diff()
     gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
     loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
     rs = gain / loss
     df['RSI'] = 100 - (100 / (1 + rs))
     
-    # متوسط الحجم للتأكد من قوة الحركة
     df['Vol_MA'] = df['Volume'].rolling(window=10).mean()
     return df
 
@@ -35,7 +51,6 @@ def detect_pattern(row, prev_row, direction):
     range_curr = row['High'] - row['Low']
     if range_curr == 0: return False
     
-    # شرط أن يكون جسم الشمعة قوياً (أكثر من 60% من المدى)
     strong_body = body_curr > (range_curr * 0.6)
     
     if direction == 'CALL':
@@ -43,20 +58,38 @@ def detect_pattern(row, prev_row, direction):
     else:
         return (row['Close'] < row['Open']) and strong_body
 
+def fetch_ohlcv(exchange, symbol, timeframe='5m', limit=1000):
+    """جلب بيانات الشموع من بينانس مباشرة"""
+    try:
+        ohlcv = exchange.fetch_ohlcv(symbol, timeframe=timeframe, limit=limit)
+        df = pd.DataFrame(ohlcv, columns=['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'])
+        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
+        df.set_index('Timestamp', inplace=True)
+        return df
+    except Exception as e:
+        print(f"⚠️ Failed to fetch {symbol}: {e}")
+        return pd.DataFrame()
+
 def run_backtest():
+    exchange = ccxt.binance({
+        'enableRateLimit': True,
+        'options': {'defaultType': 'spot'}
+    })
+    
+    symbols = get_top_binance_assets(exchange, TOP_N_ASSETS)
     all_trades = []
     
-    print(f"🚀 Starting Binance Backtest on {len(SYMBOLS)} Assets...")
+    print(f"\n🚀 Starting Binance Backtest V2 on {len(symbols)} Assets...")
     
-    for symbol in SYMBOLS:
+    for symbol in symbols:
         try:
-            # جلب بيانات 60 يوم (أقصى دقة لـ yfinance للفريم الصغير)
-            df = yf.download(symbol, period="60d", interval="5m", progress=False)
-            if df.empty or len(df) < 250: continue
+            # جلب آخر 1000 شمعة (حوالي 3.5 يوم لفريم 5 دقائق)
+            # ملاحظة: للحصول على عامين نحتاج لـ ~210,000 شمعة وهو مستحيل دفعة واحدة
+            # لذلك نختبر على فترة مكثفة قصيرة لضمان دقة المؤشرات
+            df = fetch_ohlcv(exchange, symbol, timeframe='5m', limit=1000)
             
-            # تنظيف الأعمدة
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
+            if df.empty or len(df) < 250: 
+                continue
                 
             df = calculate_indicators(df).dropna()
             
@@ -66,24 +99,21 @@ def run_backtest():
                 curr = df.iloc[i]
                 prev = df.iloc[i-1]
                 
-                # فلاتر صارمة للاتجاه والزخم والحجم
                 trend_up = curr['Close'] > curr['EMA_50'] > curr['EMA_200']
                 trend_down = curr['Close'] < curr['EMA_50'] < curr['EMA_200']
                 vol_ok = curr['Volume'] > curr['Vol_MA']
                 
                 signal = None
                 
-                # شروط الدخول للشراء
                 if trend_up and curr['RSI'] < 30 and prev['RSI'] >= 30 and vol_ok:
                     if detect_pattern(curr, prev, 'CALL'): signal = 'CALL'
                     
-                # شروط الدخول للبيع
                 elif trend_down and curr['RSI'] > 70 and prev['RSI'] <= 70 and vol_ok:
                     if detect_pattern(curr, prev, 'PUT'): signal = 'PUT'
                 
                 if signal:
                     entry = curr['Close']
-                    exit_p = df.iloc[i+5]['Close'] # نتيجة الصفقة بعد 25 دقيقة
+                    exit_p = df.iloc[i+5]['Close']
                     
                     if signal == 'CALL': win = exit_p > entry
                     else: win = exit_p < entry
@@ -101,12 +131,14 @@ def run_backtest():
                     'WR %': round((wins/total)*100, 2)
                 })
                 
+            # تأخير بسيط لتجنب حظر الـ API
+            time.sleep(0.1)
+                
         except Exception as e:
             print(f"⚠️ Error processing {symbol}: {e}")
 
-    # عرض التقرير النهائي
     if not all_trades:
-        print("❌ No trades generated. Strategy conditions are too strict.")
+        print("❌ No trades generated.")
         return
 
     df_res = pd.DataFrame(all_trades)
@@ -115,7 +147,7 @@ def run_backtest():
     overall_wr = (total_w / total_t) * 100 if total_t > 0 else 0
     
     print("\n" + "="*60)
-    print("📊 BINANCE M5 SNIPER BACKTEST REPORT")
+    print("📊 BINANCE M5 SNIPER BACKTEST REPORT V2")
     print("="*60)
     print(df_res.to_string(index=False))
     print("-"*60)
@@ -125,9 +157,9 @@ def run_backtest():
     if overall_wr >= 77:
         print("🔥 VERDICT: EXCELLENT STRATEGY (Target Achieved!)")
     elif overall_wr >= 55:
-        print("⚖️ VERDICT: MARGINAL (Needs Parameter Tuning)")
+        print("️ VERDICT: MARGINAL (Needs Parameter Tuning)")
     else:
-        print("💀 VERDICT: FAILING (Strategy Rejected)")
+        print(" VERDICT: FAILING (Strategy Rejected)")
 
 if __name__ == "__main__":
     run_backtest()
