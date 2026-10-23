@@ -19,14 +19,6 @@
   },
   "open_trades": [
     {
-      "id": "58458c31",
-      "symbol": "EURCHF=X",
-      "type": "PUT",
-      "entry_price": 0.9218299984931946,
-      "entry_time": "2026-10-23T06:00:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "f7c8c858",
       "symbol": "EURGBP=X",
       "type": "PUT",
@@ -323,6 +315,15 @@
       "exit_time": "2026-10-23T06:00:00+00:00",
       "win": true,
       "pips": 1.8000602722167969
+    },
+    {
+      "id": "58458c31",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:00:00+00:00",
+      "exit_time": "2026-10-23T06:30:00+00:00",
+      "win": true,
+      "pips": 1.2999773025512695
     }
   ],
   "daily_counter_date": "2026-10-23",
