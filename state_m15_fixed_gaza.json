@@ -17,16 +17,7 @@
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "389a35f4",
-      "symbol": "USDCAD=X",
-      "type": "PUT",
-      "entry_price": 1.3995100259780884,
-      "entry_time": "2026-10-23T15:45:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -387,6 +378,15 @@
       "exit_time": "2026-10-23T14:30:00+00:00",
       "win": true,
       "pips": 3.4999847412109375
+    },
+    {
+      "id": "389a35f4",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T15:45:00+00:00",
+      "exit_time": "2026-10-23T16:15:00+00:00",
+      "win": false,
+      "pips": 0.6997585296630859
     }
   ],
   "daily_counter_date": "2026-10-23",
