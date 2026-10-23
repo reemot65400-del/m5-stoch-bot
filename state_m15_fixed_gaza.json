@@ -19,14 +19,6 @@
   },
   "open_trades": [
     {
-      "id": "f7c8c858",
-      "symbol": "EURGBP=X",
-      "type": "PUT",
-      "entry_price": 0.837369978427887,
-      "entry_time": "2026-10-23T06:15:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "12fc56e7",
       "symbol": "USDJPY=X",
       "type": "PUT",
@@ -356,6 +348,15 @@
       "exit_time": "2026-10-23T06:30:00+00:00",
       "win": true,
       "pips": 1.2999773025512695
+    },
+    {
+      "id": "f7c8c858",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:15:00+00:00",
+      "exit_time": "2026-10-23T06:45:00+00:00",
+      "win": false,
+      "pips": 0.6002187728881836
     }
   ],
   "daily_counter_date": "2026-10-23",
