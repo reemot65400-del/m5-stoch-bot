@@ -17,40 +17,7 @@
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "12fc56e7",
-      "symbol": "USDJPY=X",
-      "type": "PUT",
-      "entry_price": 157.10000610351562,
-      "entry_time": "2026-10-23T06:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "c42240d1",
-      "symbol": "GBPJPY=X",
-      "type": "PUT",
-      "entry_price": 210.3470001220703,
-      "entry_time": "2026-10-23T06:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "eecf4c8e",
-      "symbol": "AUDJPY=X",
-      "type": "PUT",
-      "entry_price": 110.28299713134766,
-      "entry_time": "2026-10-23T06:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "7c00cf25",
-      "symbol": "CADJPY=X",
-      "type": "PUT",
-      "entry_price": 112.10700225830078,
-      "entry_time": "2026-10-23T06:30:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -357,6 +324,42 @@
       "exit_time": "2026-10-23T06:45:00+00:00",
       "win": false,
       "pips": 0.6002187728881836
+    },
+    {
+      "id": "12fc56e7",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 3.40118408203125
+    },
+    {
+      "id": "c42240d1",
+      "symbol": "GBPJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 14.9993896484375
+    },
+    {
+      "id": "eecf4c8e",
+      "symbol": "AUDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 0.799560546875
+    },
+    {
+      "id": "7c00cf25",
+      "symbol": "CADJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 2.899932861328125
     }
   ],
   "daily_counter_date": "2026-10-23",
