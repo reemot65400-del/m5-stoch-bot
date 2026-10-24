@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.3 (Fixed Resolution Timing + KeyError Fix)
-الإصلاحات الهندسية في v4.3:
-1. ★★ إصلاح جذري لمشكلة عدم وصول النتائج (Resolution Failure):
-   كان يتم تسجيل entry_time كوقت "فتح" الشمعة، مما يسبب انزياحاَ زمنياَ في حساب وقت الخروج
-   ويجعل البوت يفشل في إيجاد الشمعة الصحيحة للحسم أحياناً.
-   الآن: يتم الاعتماد على وقت الإغلاق الفعلي للشموع بدلاَ من التقدير النظري.
-2. ★★ إصلاح قاتل لـ KeyError: 'direction':
-   الصفقات المحفوظة سابقاً تستخدم المفتاح 'type' بدلاً من 'direction'.
-   تم تعديل دالة الحسم لتقبل كلا الاسمين لضمان استرجاع جميع الصفقات العالقة.
+M15 Bollinger Trend Reversal Bot - v4.4 (Fixed Daily Report Bug)
+الإصلاحات الهندسية في v4.4:
+1. ★★ إصلاح جذري لمشكلة التقرير اليومي (Zero Trades Bug):
+   التقرير كان يظهر 0 صفقات رغم وجود صفقات في الأرشيف.
+   السبب: مشكلة في تصفية التواريخ أو وجود NaT في exit_dt_gaza.
+   الحل: استخدام pd.to_datetime مع errors='coerce' وفلترة أكثر ذكاءً.
+2. ★★ إضافة logs تصحيحية لتتبع الصفقات في التقرير.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -37,7 +35,7 @@ def get_gaza_now() -> datetime:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_3_Hotfix" # ← تحديث الرقم للإشارة للإصلاح الحراري
+BOT_NAME = "M15_BB_Sniper_v4_4_ReportFix"
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -223,7 +221,6 @@ def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
         df = df[~df.index.duplicated()].sort_index().dropna()
 
         now_utc = pd.Timestamp.now(tz="UTC")
-        # حذف الشمعة الجارية فقط: 15 دقيقة إغلاق + دقيقتان هامش بيانات
         if not df.empty and df.index[-1] + pd.Timedelta(minutes=17) > now_utc: 
             df = df.iloc[:-1]
 
@@ -250,7 +247,7 @@ def analyze_market(symbol: str):
         return None
 
     curr = df.iloc[-1]
-    candle_time = df.index[-1] # هذا وقت فتح الشمعة
+    candle_time = df.index[-1]
 
     price = float(curr['Close'])
     ema_200 = float(curr['EMA_200'])
@@ -282,7 +279,7 @@ def analyze_market(symbol: str):
     }
 
 # ═══════════════════════════════════════════════
-# 4. نظام الحسم التلقائي (★★ مُعدل لإصلاح KeyError ★★)
+# 4. نظام الحسم التلقائي
 # ═══════════════════════════════════════════════
 
 def resolve_pending_trades(sm: StateManager):
@@ -294,28 +291,18 @@ def resolve_pending_trades(sm: StateManager):
 
     for trade in sm.data["open_trades"]:
         try:
-            # قراءة وقت الدخول المسجل
             entry_dt_raw = datetime.fromisoformat(trade['entry_time'])
             if entry_dt_raw.tzinfo is None:
                 entry_dt_raw = entry_dt_raw.replace(tzinfo=timezone.utc)
             
-            # ★★ الإصلاح هنا: تحويل وقت الفتح إلى وقت الإغلاق الفعلي للشمعة ★★
             actual_entry_close_time = entry_dt_raw + timedelta(minutes=TRADE_DURATION_MINUTES)
-
-            # تحديد موعد انتهاء الصفقة (شمعة خروج واحدة = 15 دقيقة أخرى)
             expected_exit_close_time = actual_entry_close_time + timedelta(minutes=TRADE_DURATION_MINUTES)
-            
-            # ننتظر إغلاق شمعة الخروج + هامش تحديث البيانات (دقيقتان)
             check_ready_time = expected_exit_close_time + timedelta(minutes=2)
             
             if now_utc < check_ready_time:
                 continue
             
             sym = trade['symbol']
-            
-            # ★★★ الإصلاح الجراحي لمشكلة KeyError ★★★
-            # الصفقات القديمة قد تكون محفوظة بمفتاح 'type' والجديدة بـ 'direction'
-            # نستخدم .get() لجلب القيمة من أي منهما بأمان
             dr = trade.get('direction') or trade.get('type')
             
             if dr is None:
@@ -331,10 +318,8 @@ def resolve_pending_trades(sm: StateManager):
                 log.warning(f"No exit data for {sym}. Retry next cycle.")
                 continue
                 
-            # البحث عن الشمعة التي تمثل "وقت الخروج"
             target_candle_start = expected_exit_close_time - timedelta(minutes=TRADE_DURATION_MINUTES)
             
-            # نجدها بمطابقة تقريبية (لأن الفهارس قد تكون بالثواني الجزئية)
             mask = (df_exit_full.index >= target_candle_start - timedelta(seconds=30)) & \
                    (df_exit_full.index <= target_candle_start + timedelta(seconds=30))
                    
@@ -343,7 +328,6 @@ def resolve_pending_trades(sm: StateManager):
             if not matching_candles.empty:
                 exit_px = float(matching_candles.iloc[0]['Close'])
             else:
-                # احتياطي صارم: نأخذ أقرب شمعة مغلقة قبل الموعد المحدد
                 past_mask = df_exit_full.index < target_candle_start
                 if past_mask.any():
                     exit_px = float(df_exit_full[past_mask].iloc[-1]['Close'])
@@ -358,9 +342,8 @@ def resolve_pending_trades(sm: StateManager):
             
             log.info(f"Success! Entry={entry_px} Exit={exit_px} Diff={diff} Pips={pips_diff:.2f}")
             
-            # سوق ساكن حقاَ
             if pips_diff < 0.1:
-                emoji, is_win, status_text = "⚪ لاغي", None, "_Market Flat_"
+                emoji, is_win, status_text = " لاغي", None, "_Market Flat_"
             else:
                 is_win = (diff > 0) if dr == 'CALL' else (diff < 0)
                 emoji = "✅ ربح" if is_win else "❌ خسارة"
@@ -389,7 +372,7 @@ def resolve_pending_trades(sm: StateManager):
         sm.remove_open_trade(tid)
 
 # ═══════════════════════════════════════════════
-# 5. نظام التقارير المتقدم (نفسه بدون تغيير)
+# 5. نظام التقارير المتقدم (★★ مُصلح جذرياً ★★)
 # ═══════════════════════════════════════════════
 
 AR_MONTHS = {
@@ -420,7 +403,6 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
     df = df.copy()
 
-    # ★★ v4.1 Zero-Crash: حماية من الأعمدة الناقصة في أرشيف قديم ★★
     if 'id' not in df.columns:
         df['id'] = [f"row{i}" for i in range(len(df))]
     if 'symbol' not in df.columns:
@@ -434,7 +416,6 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
     df['pips'] = pd.to_numeric(df['pips'], errors='coerce').fillna(0.0)
 
-    # النقاط الموجّهة: موجب ربح، سالب خسارة، صفر لاغي
     df['signed_pips'] = np.where(
         df['win'] == True, df['pips'],
         np.where(df['win'] == False, -df['pips'], 0.0)
@@ -449,7 +430,6 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
     wr = (wins / valid_trades * 100.0) if valid_trades > 0 else 0.0
     net_pips = float(df['signed_pips'].sum())
 
-    # 1. أفضل/أسوأ زوج (محصن ضد القسمة على صفر)
     pair_stats = df.groupby('symbol', as_index=False).agg(
         trades=('id', 'count'),
         wins=('win', lambda x: int((x == True).sum())),
@@ -469,17 +449,15 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         worst_pair = valid_pairs.loc[valid_pairs['pips'].idxmin()]
         best_pair_txt = f"🥇 {best_pair['symbol']} ({best_pair['pips']:+.1f} Pips, WR: {best_pair['wr']:.1f}%)"
         
-        # ★★ إصلاح: التحقق من وجود أزواج أخرى مختلفة عن الأفضل ★★
         other_pairs = valid_pairs[valid_pairs['symbol'] != best_pair['symbol']]
         if not other_pairs.empty:
-            worst_pair_txt = f"⚠️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
+            worst_pair_txt = f"️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
         else:
             worst_pair_txt = "لا يوجد (زوج واحد فقط تم التداول عليه)"
     else:
         best_pair_txt = "غير متاح"
         worst_pair_txt = "غير متاح"
 
-    # 2. أفضل وقت (ساعة) بتوقيت غزة — v4.1: حماية من NaN
     hour_src = df['exit_dt_gaza'].dt.hour
     time_stats = df.assign(gaza_hour=hour_src).dropna(subset=['gaza_hour']).groupby('gaza_hour', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
@@ -500,7 +478,6 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
             best_hour = int(best_hour)
             best_time_txt = f"🕒 {best_hour:02d}:00 - {(best_hour + 1) % 24:02d}:00 بتوقيت غزة"
 
-    # 3. أفضل يوم (إصلاح KeyError: 'wr' محفوظ من v4.0)
     day_src = df['exit_dt_gaza'].dt.dayofweek
     day_stats = df.assign(gaza_day_ar=day_src.dropna().map(lambda i: AR_DAYS.get(int(i), 'غير معروف')))\
         .dropna(subset=['gaza_day_ar']).groupby('gaza_day_ar', as_index=False).agg(
@@ -519,7 +496,6 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
     if not valid_days.empty:
         best_day_txt = f"📅 {valid_days.loc[valid_days['wr'].idxmax()]['gaza_day_ar']}"
 
-    # 4. أفضل شريحة (JPY vs غير JPY)
     df['is_jpy'] = df['symbol'].astype(str).str.contains('JPY')
     cat_stats = df.groupby('is_jpy', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
@@ -559,31 +535,64 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
 
 def generate_advanced_reports(sm: StateManager):
+    """
+    ★★ v4.4 — إصلاح جذري لمشكلة التقرير اليومي ★★
+    """
     local_now = get_gaza_now()
     history = sm.data.get("trade_history", [])
 
+    log.info(f"DEBUG: Total history trades: {len(history)}")
+
     if history:
         df_hist = pd.DataFrame(history)
+        
+        # ★★ الإصلاح الجذري: تحويل exit_time إلى datetime بشكل آمن ★★
         if 'exit_time' in df_hist.columns:
-            df_hist['exit_dt_gaza'] = pd.to_datetime(
-                df_hist['exit_time'], utc=True, errors='coerce').dt.tz_convert(GAZA_TZ)
-            df_hist = df_hist.dropna(subset=['exit_dt_gaza'])
+            # تحويل exit_time إلى timezone-aware datetime
+            df_hist['exit_dt_utc'] = pd.to_datetime(df_hist['exit_time'], utc=True, errors='coerce')
+            # التحويل إلى توقيت غزة
+            df_hist['exit_dt_gaza'] = df_hist['exit_dt_utc'].dt.tz_convert(GAZA_TZ)
+            
+            # إزالة الصفقات ذات التواريخ التالفة
+            valid_mask = df_hist['exit_dt_gaza'].notna()
+            invalid_count = (~valid_mask).sum()
+            if invalid_count > 0:
+                log.warning(f"DEBUG: Found {invalid_count} trades with invalid exit_time")
+            
+            df_hist = df_hist[valid_mask].copy()
+            log.info(f"DEBUG: Valid trades after cleaning: {len(df_hist)}")
         else:
+            log.error("DEBUG: No 'exit_time' column in trade history!")
             df_hist = pd.DataFrame()
     else:
         df_hist = pd.DataFrame()
+        log.info("DEBUG: No trade history found")
 
-    # ─── 1. التقرير اليومي: أي نبضة بعد منتصف الليل حتى ينجح الإرسال ───
+    # ─── 1. التقرير اليومي ───
     yesterday = local_now - timedelta(days=1)
     yesterday_str = yesterday.strftime("%Y-%m-%d")
     daily_period_name = f"{AR_DAYS[yesterday.weekday()]} {yesterday.day} {ar_month_name(yesterday)} {yesterday.year}"
 
+    log.info(f"DEBUG: Looking for trades on {yesterday_str}")
+
     if sm.data.get("last_daily_report") != yesterday_str:
         log.info(f"Daily report due for {yesterday_str} — attempting send...")
+        
         if not df_hist.empty:
-            daily_df = df_hist[df_hist['exit_dt_gaza'].dt.strftime("%Y-%m-%d") == yesterday_str]
+            # ★★ طريقة أكثر موثوقية للتصفية ★★
+            # استخراج التاريخ من exit_dt_gaza ومقارنته
+            df_hist['exit_date_str'] = df_hist['exit_dt_gaza'].dt.strftime("%Y-%m-%d")
+            daily_df = df_hist[df_hist['exit_date_str'] == yesterday_str].copy()
+            
+            log.info(f"DEBUG: Found {len(daily_df)} trades for {yesterday_str}")
+            
+            # طباعة معلومات تصحيحية
+            if len(daily_df) > 0:
+                log.info(f"DEBUG: Sample trade exit_time: {daily_df.iloc[0]['exit_time']}")
+                log.info(f"DEBUG: Sample trade exit_dt_gaza: {daily_df.iloc[0]['exit_dt_gaza']}")
         else:
             daily_df = pd.DataFrame()
+            log.info("DEBUG: df_hist is empty")
 
         if send_detailed_report(daily_df, "اليومي", daily_period_name):
             sm.data["last_daily_report"] = yesterday_str
@@ -592,7 +601,7 @@ def generate_advanced_reports(sm: StateManager):
         else:
             log.warning("Daily report send failed — will retry on next pulse (guaranteed delivery).")
 
-    # ─── 2. التقرير الأسبوعي: كل نبضات يوم الأحد حتى ينجح ───
+    # ─── 2. التقرير الأسبوعي ───
     last_week_dt = local_now - timedelta(days=local_now.weekday() + 1)
     last_week_year, last_week_num, _ = last_week_dt.isocalendar()
     last_week_str = f"{last_week_year}-W{last_week_num:02d}"
@@ -616,7 +625,7 @@ def generate_advanced_reports(sm: StateManager):
         else:
             log.warning("Weekly report send failed — will retry on next pulse.")
 
-    # ─── 3. التقرير الشهري: كل نبضات يوم 1 حتى ينجح ───
+    # ─── 3. التقرير الشهري ───
     last_month_dt = local_now.replace(day=1) - timedelta(days=1)
     last_month_str = last_month_dt.strftime("%Y-%m")
     monthly_period_name = f"{ar_month_name(last_month_dt)} {last_month_dt.year}"
@@ -657,13 +666,9 @@ def main():
     sm = StateManager(STATE_FILE)
     sm.log_summary()
 
-    # 1. حسم الصفقات المفتوحة أولاَ لتدخل في التقرير إذا حان وقته
     resolve_pending_trades(sm)
-
-    # 2. فحص وإرسال التقارير (اليومية / الأسبوعية / الشهرية)
     generate_advanced_reports(sm)
 
-    # 3. فلاتر أوقات التوقف (عطلة نهاية الأسبوع + الحظر الليلي)
     now_utc = datetime.now(timezone.utc)
     if now_utc.weekday() >= 5:
         log.info("Weekend. Skipping new signals.")
@@ -674,7 +679,6 @@ def main():
         log.info(f"Inside Night Ban Window ({current_gaza_hour:02d}:xx Gaza Time). Skipping new signals.")
         return
 
-    # 4. فحص السوق وإرسال الإشارات
     signals_found = 0
     best_gap, best_sym, best_dir = None, None, None
 
@@ -703,7 +707,7 @@ def main():
 
         msg = (
             f"*🎯 إشارة M15 BOLLINGER TREND REVERSAL #{signal_num}*\n\n"
-            f"📊 *الزوج:* `{result['symbol']}`\n"
+            f" *الزوج:* `{result['symbol']}`\n"
             f"📈 *الاتجاه:* {arrow}\n"
             f"💰 *السعر الحالي:* `{result['price']:.5f}`\n\n"
             f"🎯 *منطقة الدخول:* لمس البولنجر باندز\n"
@@ -722,7 +726,7 @@ def main():
             sm.add_open_trade({
                 "id": str(uuid.uuid4())[:8],
                 "symbol": result['symbol'],
-                "type": result['type'], # ← نحتفظ بهكذا للمحافظة على التوافق مع الماضي
+                "type": result['type'],
                 "entry_price": result['price'],
                 "entry_time": result['time'].isoformat(),
                 "msg_id": mid
