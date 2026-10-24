@@ -1,17 +1,21 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.4 (Fixed Daily Report Bug)
-الإصلاحات الهندسية في v4.4:
-1. ★★ إصلاح جذري لمشكلة التقرير اليومي (Zero Trades Bug):
-   التقرير كان يظهر 0 صفقات رغم وجود صفقات في الأرشيف.
-   السبب: مشكلة في تصفية التواريخ أو وجود NaT في exit_dt_gaza.
-   الحل: استخدام pd.to_datetime مع errors='coerce' وفلترة أكثر ذكاءً.
-2. ★★ إضافة logs تصحيحية لتتبع الصفقات في التقرير.
+M15 Bollinger Trend Reversal Bot - v4.5 (Final Timezone & Archive Rescue)
+الإصلاحات الهندسية النهائية في v4.5:
+1. ★★ إصلاح جذري لمشكلة الانزياح الزمني (UTC+2 vs UTC+3):
+   تم فرض إزاحة ثابتة (+3 ساعات) يدوياً لحساب توقيت غزة، متجاهلاً إعدادات نظام التشغيل
+   التي قد تكون خاطئة أو متأخرة عن التوقيت الصيفي/الشتوي الفعلي.
+2. ★★ إنقاذ الأرشيف التالف (Archive Rescue):
+   الصفقات المحفوظة سابقاً بدون علامة المنطقة الزمنية (+00:00) كانت تُسقط كـ NaT.
+   الآن يتم حقن "+00:00" تلقائياً للنصوص الناقصة قبل التحويل، مما يضمن احتسابها بدقة.
+3. ★★ تحسين دقة التقرير اليومي:
+   استخدام مفتاح تاريخي موحد (%Y-%m-%d) للمقارنة المباشرة مع "أمس"، لضمان التقاط كل
+   صفقة حدثت ضمن نافذة اليوم الصحيح بغض النظر عن ساعة الإغلاق الدقيقة.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
-from zoneinfo import ZoneInfo
+from zoneinfo import ZoneInfo #保留 للاستخدام الاحتياطي
 from pathlib import Path
 import requests
 import numpy as np
@@ -24,18 +28,31 @@ try:
 except ImportError:
     print("pip install yfinance"); sys.exit(1)
 
+# ═══════════════════════════════════════════════
+# 0. ثوابت التوقيت الآمنة (Safety Constants)
+# ═══════════════════════════════════════════════
+# فرض إزاحة +3 دائماً لضمان الاتساق الداخلي بغض النظر عن tzdata الخادم
+PALESTINE_UTC_OFFSET_HOURS = 3 
+
+def get_palestine_now_safe() -> datetime:
+    """يعيد الوقت الحالي بفرض إزاحة +3 يدوياً لتجنب أخطاء النظام"""
+    utc_now = datetime.now(timezone.utc)
+    return utc_now + timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)
+
+# محاولة تحميل ZoneInfo كاحتياط (لكننا سنستخدم الدالة اليدوية أعلاه للحسابات الحرجة)
 try:
     GAZA_TZ = ZoneInfo("Asia/Gaza")
 except Exception:
-    GAZA_TZ = timezone(timedelta(hours=3))
+    GAZA_TZ = timezone(timedelta(hours=PALESTINE_UTC_OFFSET_HOURS))
 
 def get_gaza_now() -> datetime:
-    return datetime.now(timezone.utc).astimezone(GAZA_TZ)
+    """دالة توافقية تستخدم الحساب الآمن الجديد"""
+    return get_palestine_now_safe()
 
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_4_ReportFix"
+BOT_NAME = "M15_BB_Sniper_v4_5_FinalFix"
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -152,7 +169,7 @@ class StateManager:
             log.error(f"State summary failed: {e}")
 
     def get_next_signal_number(self) -> int:
-        today_str = get_gaza_now().strftime("%Y-%m-%d")
+        today_str = get_palestine_now_safe().strftime("%Y-%m-%d")
         if self.data.get("daily_counter_date") != today_str:
             self.data["daily_counter_date"] = today_str
             self.data["daily_signal_count"] = 0
@@ -343,7 +360,7 @@ def resolve_pending_trades(sm: StateManager):
             log.info(f"Success! Entry={entry_px} Exit={exit_px} Diff={diff} Pips={pips_diff:.2f}")
             
             if pips_diff < 0.1:
-                emoji, is_win, status_text = " لاغي", None, "_Market Flat_"
+                emoji, is_win, status_text = "⚪ لاغي", None, "_Market Flat_"
             else:
                 is_win = (diff > 0) if dr == 'CALL' else (diff < 0)
                 emoji = "✅ ربح" if is_win else "❌ خسارة"
@@ -372,7 +389,7 @@ def resolve_pending_trades(sm: StateManager):
         sm.remove_open_trade(tid)
 
 # ═══════════════════════════════════════════════
-# 5. نظام التقارير المتقدم (★★ مُصلح جذرياً ★★)
+# 5. نظام التقارير المتقدم (★★ مُصلح جذرياَ ★★)
 # ═══════════════════════════════════════════════
 
 AR_MONTHS = {
@@ -388,12 +405,27 @@ def ar_month_name(dt: datetime) -> str:
     return AR_MONTHS.get(dt.strftime("%m"), dt.strftime("%B"))
 
 
+def normalize_exit_time(time_str: str) -> str:
+    """
+    ★★ وظيفة الإنقاذ الأساسية ★★
+    تحول أي نص تاريخ إلى صيغة ISO قياسية مع +00:00 إذا كانت ناقصة.
+    مثال: "2026-10-23T06:00:00" -> "2026-10-23T06:00:00+00:00"
+    """
+    if not time_str:
+        return time_str
+    # إذا كان النص يحتوي بالفعل على معلومات المنطقة الزمنية (+/- أو Z)، نتركه كما هو
+    if "+" in time_str or "-" in time_str.split('T')[1] if 'T' in time_str else False or time_str.endswith('Z'):
+        return time_str
+    # وإلا، نضيف +00:00 افتراضياً لأن البوت يعمل بالـ UTC أساساً
+    return time_str + "+00:00"
+
+
 def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -> bool:
     if df is None or df.empty:
         msg = (
             f"*📊 التقرير {report_type} ({period_name})*\n\n"
             f"📈 *إجمالي الصفقات:* `0`\n"
-            f"ℹ️ _لم تُسجل صفقات خلال هذه الفترة._\n\n"
+            f"ℹ️ _لم تسجل صفقات خلال هذه الفترة._\n\n"
             f"_البوت يعمل بكفاءة ويراقب السوق بانتظام!_"
         )
         sent = send_telegram(msg)
@@ -411,8 +443,8 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         df['win'] = None
     if 'pips' not in df.columns:
         df['pips'] = 0.0
-    if 'exit_dt_gaza' not in df.columns:
-        df['exit_dt_gaza'] = pd.NaT
+    if 'exit_dt_gaza_forced' not in df.columns:
+        df['exit_dt_gaza_forced'] = pd.NaT
 
     df['pips'] = pd.to_numeric(df['pips'], errors='coerce').fillna(0.0)
 
@@ -451,14 +483,14 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         
         other_pairs = valid_pairs[valid_pairs['symbol'] != best_pair['symbol']]
         if not other_pairs.empty:
-            worst_pair_txt = f"️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
+            worst_pair_txt = f"⚠️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
         else:
             worst_pair_txt = "لا يوجد (زوج واحد فقط تم التداول عليه)"
     else:
         best_pair_txt = "غير متاح"
         worst_pair_txt = "غير متاح"
 
-    hour_src = df['exit_dt_gaza'].dt.hour
+    hour_src = df['exit_dt_gaza_forced'].dt.hour
     time_stats = df.assign(gaza_hour=hour_src).dropna(subset=['gaza_hour']).groupby('gaza_hour', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
         losses=('win', lambda x: int((x == False).sum())),
@@ -478,7 +510,7 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
             best_hour = int(best_hour)
             best_time_txt = f"🕒 {best_hour:02d}:00 - {(best_hour + 1) % 24:02d}:00 بتوقيت غزة"
 
-    day_src = df['exit_dt_gaza'].dt.dayofweek
+    day_src = df['exit_dt_gaza_forced'].dt.dayofweek
     day_stats = df.assign(gaza_day_ar=day_src.dropna().map(lambda i: AR_DAYS.get(int(i), 'غير معروف')))\
         .dropna(subset=['gaza_day_ar']).groupby('gaza_day_ar', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
@@ -536,63 +568,61 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
 def generate_advanced_reports(sm: StateManager):
     """
-    ★★ v4.4 — إصلاح جذري لمشكلة التقرير اليومي ★★
+    ★★ v4.5 — الإصلاح النهائي للتوقيت والأرشيف ★★
     """
-    local_now = get_gaza_now()
+    local_now = get_palestine_now_safe()
     history = sm.data.get("trade_history", [])
 
-    log.info(f"DEBUG: Total history trades: {len(history)}")
+    log.info(f"DEBUG v4.5: Total raw history trades: {len(history)}")
 
-    if history:
-        df_hist = pd.DataFrame(history)
-        
-        # ★★ الإصلاح الجذري: تحويل exit_time إلى datetime بشكل آمن ★★
-        if 'exit_time' in df_hist.columns:
-            # تحويل exit_time إلى timezone-aware datetime
-            df_hist['exit_dt_utc'] = pd.to_datetime(df_hist['exit_time'], utc=True, errors='coerce')
-            # التحويل إلى توقيت غزة
-            df_hist['exit_dt_gaza'] = df_hist['exit_dt_utc'].dt.tz_convert(GAZA_TZ)
-            
-            # إزالة الصفقات ذات التواريخ التالفة
-            valid_mask = df_hist['exit_dt_gaza'].notna()
-            invalid_count = (~valid_mask).sum()
-            if invalid_count > 0:
-                log.warning(f"DEBUG: Found {invalid_count} trades with invalid exit_time")
-            
-            df_hist = df_hist[valid_mask].copy()
-            log.info(f"DEBUG: Valid trades after cleaning: {len(df_hist)}")
-        else:
-            log.error("DEBUG: No 'exit_time' column in trade history!")
-            df_hist = pd.DataFrame()
-    else:
+    if not history:
         df_hist = pd.DataFrame()
-        log.info("DEBUG: No trade history found")
+        return
+
+    df_hist = pd.DataFrame(history)
+    
+    # ★★ خطوة الإنقاذ: تطبيع التواريخ أولاً ★★
+    if 'exit_time' in df_hist.columns:
+        # تطبيق دالة التطبيع على كل عنصر في العمود
+        df_hist['normalized_exit_time'] = df_hist['exit_time'].apply(normalize_exit_time)
+        
+        # التحويل إلى DateTime مع ضمان قراءة UTC
+        df_hist['exit_dt_utc'] = pd.to_datetime(df_hist['normalized_exit_time'], utc=True, errors='coerce')
+        
+        # التحقق من النجاح
+        valid_mask = df_hist['exit_dt_utc'].notna()
+        dropped_count = (~valid_mask).sum()
+        if dropped_count > 0:
+            log.warning(f"FIXED v4.5: Still dropping {dropped_count} truly corrupt entries after normalization.")
+        
+        df_clean = df_hist[valid_mask].copy()
+        
+        # ★★ التطبيق اليدوي للإزاحة (+3) لضمان عدم تأثرها بنظام الخادم ★★
+        # نحن نعرف أن البيانات الأصلية UTC، لذا نضيف 3 ساعات للحصول على توقيت غزة المحلي
+        df_clean['exit_dt_gaza_forced'] = df_clean['exit_dt_utc'] + timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)
+        
+    else:
+        log.error("CRITICAL: No 'exit_time' column found!")
+        df_clean = pd.DataFrame()
 
     # ─── 1. التقرير اليومي ───
     yesterday = local_now - timedelta(days=1)
     yesterday_str = yesterday.strftime("%Y-%m-%d")
     daily_period_name = f"{AR_DAYS[yesterday.weekday()]} {yesterday.day} {ar_month_name(yesterday)} {yesterday.year}"
 
-    log.info(f"DEBUG: Looking for trades on {yesterday_str}")
+    log.info(f"DEBUG v4.5: Looking for trades on {yesterday_str}")
 
     if sm.data.get("last_daily_report") != yesterday_str:
         log.info(f"Daily report due for {yesterday_str} — attempting send...")
         
-        if not df_hist.empty:
-            # ★★ طريقة أكثر موثوقية للتصفية ★★
-            # استخراج التاريخ من exit_dt_gaza ومقارنته
-            df_hist['exit_date_str'] = df_hist['exit_dt_gaza'].dt.strftime("%Y-%m-%d")
-            daily_df = df_hist[df_hist['exit_date_str'] == yesterday_str].copy()
+        if not df_clean.empty:
+            # استخراج مفتاح التاريخ من العمود المُصلح يدوياً
+            df_clean['date_key'] = df_clean['exit_dt_gaza_forced'].dt.strftime("%Y-%m-%d")
+            daily_df = df_clean[df_clean['date_key'] == yesterday_str].copy()
             
-            log.info(f"DEBUG: Found {len(daily_df)} trades for {yesterday_str}")
-            
-            # طباعة معلومات تصحيحية
-            if len(daily_df) > 0:
-                log.info(f"DEBUG: Sample trade exit_time: {daily_df.iloc[0]['exit_time']}")
-                log.info(f"DEBUG: Sample trade exit_dt_gaza: {daily_df.iloc[0]['exit_dt_gaza']}")
+            log.info(f"DEBUG v4.5 MATCH: Found {len(daily_df)} valid trades for {yesterday_str}")
         else:
             daily_df = pd.DataFrame()
-            log.info("DEBUG: df_hist is empty")
 
         if send_detailed_report(daily_df, "اليومي", daily_period_name):
             sm.data["last_daily_report"] = yesterday_str
@@ -612,9 +642,9 @@ def generate_advanced_reports(sm: StateManager):
 
     if local_now.weekday() == 6 and sm.data.get("last_weekly_report") != last_week_str:
         log.info(f"Weekly report due for {last_week_str} — attempting send...")
-        if not df_hist.empty:
-            iso_cal = df_hist['exit_dt_gaza'].dt.isocalendar()
-            weekly_df = df_hist[(iso_cal.year == last_week_year) & (iso_cal.week == last_week_num)]
+        if not df_clean.empty:
+            iso_cal = df_clean['exit_dt_gaza_forced'].dt.isocalendar()
+            weekly_df = df_clean[(iso_cal.year == last_week_year) & (iso_cal.week == last_week_num)]
         else:
             weekly_df = pd.DataFrame()
 
@@ -632,10 +662,10 @@ def generate_advanced_reports(sm: StateManager):
 
     if local_now.day == 1 and sm.data.get("last_monthly_report") != last_month_str:
         log.info(f"Monthly report due for {last_month_str} — attempting send...")
-        if not df_hist.empty:
-            monthly_df = df_hist[
-                (df_hist['exit_dt_gaza'].dt.year == last_month_dt.year) &
-                (df_hist['exit_dt_gaza'].dt.month == last_month_dt.month)
+        if not df_clean.empty:
+            monthly_df = df_clean[
+                (df_clean['exit_dt_gaza_forced'].dt.year == last_month_dt.year) &
+                (df_clean['exit_dt_gaza_forced'].dt.month == last_month_dt.month)
             ]
         else:
             monthly_df = pd.DataFrame()
@@ -653,10 +683,10 @@ def generate_advanced_reports(sm: StateManager):
 # ═══════════════════════════════════════════════
 
 def main():
-    local_now = get_gaza_now()
+    local_now = get_palestine_now_safe()
     log.info("=" * 55)
     log.info(f"STARTING {BOT_NAME} | ZERO-BUG PRODUCTION MODE")
-    log.info(f"UTC Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} | Gaza Time: {local_now.strftime('%Y-%m-%d %H:%M:%S')}")
+    log.info(f"UTC Time: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} | Gaza Safe Time: {local_now.strftime('%Y-%m-%d %H:%M:%S')}")
     log.info("=" * 55)
 
     if not TG_TOKEN or not TG_CHAT:
@@ -700,14 +730,14 @@ def main():
 
         signals_found += 1
         signal_num = sm.get_next_signal_number()
-        arrival_time_gaza = get_gaza_now().strftime("%H:%M")
+        arrival_time_gaza = get_palestine_now_safe().strftime("%H:%M")
 
         arrow = "🟢 CALL (صعود)" if result['type'] == "CALL" else "🔴 PUT (هبوط)"
         expiry_time = (result['time'] + timedelta(minutes=TRADE_DURATION_MINUTES * 2)).strftime("%H:%M")
 
         msg = (
             f"*🎯 إشارة M15 BOLLINGER TREND REVERSAL #{signal_num}*\n\n"
-            f" *الزوج:* `{result['symbol']}`\n"
+            f"📊 *الزوج:* `{result['symbol']}`\n"
             f"📈 *الاتجاه:* {arrow}\n"
             f"💰 *السعر الحالي:* `{result['price']:.5f}`\n\n"
             f"🎯 *منطقة الدخول:* لمس البولنجر باندز\n"
