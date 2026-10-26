@@ -6,7 +6,7 @@
     "EURUSD=X": "2026-10-26T06:30:00+00:00",
     "EURJPY=X": "2026-10-20T14:15:00+00:00",
     "AUDUSD=X": "2026-10-26T07:00:00+00:00",
-    "GBPJPY=X": "2026-10-23T07:30:00+00:00",
+    "GBPJPY=X": "2026-10-26T11:30:00+00:00",
     "CHFJPY=X": "2026-10-22T19:00:00+00:00",
     "GBPUSD=X": "2026-10-22T21:00:00+00:00",
     "EURGBP=X": "2026-10-23T15:00:00+00:00",
@@ -17,7 +17,16 @@
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "88ada043",
+      "symbol": "GBPJPY=X",
+      "type": "PUT",
+      "entry_price": 210.10899353027344,
+      "entry_time": "2026-10-26T10:30:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -426,7 +435,7 @@
     }
   ],
   "daily_counter_date": "2026-10-26",
-  "daily_signal_count": 4,
+  "daily_signal_count": 5,
   "last_daily_report": "2026-10-25",
   "last_weekly_report": "2026-W42",
   "last_monthly_report": ""
