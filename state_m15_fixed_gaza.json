@@ -17,16 +17,7 @@
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "f87def25",
-      "symbol": "NZDUSD=X",
-      "type": "CALL",
-      "entry_price": 0.569605827331543,
-      "entry_time": "2026-10-26T07:15:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -423,6 +414,15 @@
       "exit_time": "2026-10-26T06:30:00+00:00",
       "win": true,
       "pips": 1.9490718841552734
+    },
+    {
+      "id": "f87def25",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-26T07:15:00+00:00",
+      "exit_time": "2026-10-26T07:45:00+00:00",
+      "win": false,
+      "pips": 2.918243408203125
     }
   ],
   "daily_counter_date": "2026-10-26",
