@@ -3,7 +3,7 @@
     "USDJPY=X": "2026-10-23T07:30:00+00:00",
     "NZDJPY=X": "2026-10-20T12:45:00+00:00",
     "NZDUSD=X": "2026-10-21T15:30:00+00:00",
-    "EURUSD=X": "2026-10-23T13:45:00+00:00",
+    "EURUSD=X": "2026-10-26T06:30:00+00:00",
     "EURJPY=X": "2026-10-20T14:15:00+00:00",
     "AUDUSD=X": "2026-10-19T06:30:00+00:00",
     "GBPJPY=X": "2026-10-23T07:30:00+00:00",
@@ -17,7 +17,16 @@
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "e033ffd7",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_price": 1.121956706047058,
+      "entry_time": "2026-10-26T05:30:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -389,8 +398,8 @@
       "pips": 0.6997585296630859
     }
   ],
-  "daily_counter_date": "2026-10-23",
-  "daily_signal_count": 10,
+  "daily_counter_date": "2026-10-26",
+  "daily_signal_count": 1,
   "last_daily_report": "2026-10-25",
   "last_weekly_report": "2026-W42",
   "last_monthly_report": ""
