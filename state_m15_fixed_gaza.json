@@ -11,13 +11,22 @@
     "GBPUSD=X": "2026-10-22T21:00:00+00:00",
     "EURGBP=X": "2026-10-23T15:00:00+00:00",
     "USDCAD=X": "2026-10-23T16:45:00+00:00",
-    "CADJPY=X": "2026-10-23T07:30:00+00:00",
+    "CADJPY=X": "2026-10-27T10:00:00+00:00",
     "AUDJPY=X": "2026-10-23T07:30:00+00:00",
     "EURAUD=X": "2026-10-26T15:30:00+00:00",
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "9f3b242a",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_price": 112.43099975585938,
+      "entry_time": "2026-10-27T09:00:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -452,8 +461,8 @@
       "pips": 2.5069713592529297
     }
   ],
-  "daily_counter_date": "2026-10-26",
-  "daily_signal_count": 7,
+  "daily_counter_date": "2026-10-27",
+  "daily_signal_count": 1,
   "last_daily_report": "2026-10-26",
   "last_weekly_report": "2026-W42",
   "last_monthly_report": ""
