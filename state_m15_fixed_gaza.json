@@ -17,16 +17,7 @@
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
     "EURCHF=X": "2026-10-23T07:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "9f3b242a",
-      "symbol": "CADJPY=X",
-      "type": "CALL",
-      "entry_price": 112.43099975585938,
-      "entry_time": "2026-10-27T09:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -459,6 +450,15 @@
       "exit_time": "2026-10-26T17:45:00+00:00",
       "win": true,
       "pips": 2.5069713592529297
+    },
+    {
+      "id": "9f3b242a",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-27T09:00:00+00:00",
+      "exit_time": "2026-10-27T09:30:00+00:00",
+      "win": true,
+      "pips": 4.2999267578125
     }
   ],
   "daily_counter_date": "2026-10-27",
