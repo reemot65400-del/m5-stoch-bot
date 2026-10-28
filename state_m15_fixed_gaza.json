@@ -17,24 +17,7 @@
     "USDCHF=X": "2026-10-28T17:15:00+00:00",
     "EURCHF=X": "2026-10-28T07:15:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "13579f34",
-      "symbol": "USDJPY=X",
-      "type": "CALL",
-      "entry_price": 157.94200134277344,
-      "entry_time": "2026-10-28T18:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "993fb5ff",
-      "symbol": "NZDUSD=X",
-      "type": "PUT",
-      "entry_price": 0.5638567805290222,
-      "entry_time": "2026-10-28T18:30:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -593,6 +576,24 @@
       "exit_time": "2026-10-28T16:45:00+00:00",
       "win": false,
       "pips": 0.9000301361083984
+    },
+    {
+      "id": "13579f34",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-28T18:30:00+00:00",
+      "exit_time": "2026-10-28T19:00:00+00:00",
+      "win": true,
+      "pips": 11.00006103515625
+    },
+    {
+      "id": "993fb5ff",
+      "symbol": "NZDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T18:30:00+00:00",
+      "exit_time": "2026-10-28T19:00:00+00:00",
+      "win": true,
+      "pips": 10.789036750793457
     }
   ],
   "daily_counter_date": "2026-10-28",
