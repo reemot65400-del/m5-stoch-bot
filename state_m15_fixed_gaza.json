@@ -15,9 +15,18 @@
     "AUDJPY=X": "2026-10-27T21:00:00+00:00",
     "EURAUD=X": "2026-10-26T15:30:00+00:00",
     "USDCHF=X": "2026-10-23T06:30:00+00:00",
-    "EURCHF=X": "2026-10-23T07:00:00+00:00"
+    "EURCHF=X": "2026-10-28T07:15:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "3413c375",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9233400225639343,
+      "entry_time": "2026-10-28T06:15:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -497,8 +506,8 @@
       "pips": 2.700042724609375
     }
   ],
-  "daily_counter_date": "2026-10-27",
-  "daily_signal_count": 5,
+  "daily_counter_date": "2026-10-28",
+  "daily_signal_count": 1,
   "last_daily_report": "2026-10-27",
   "last_weekly_report": "2026-W42",
   "last_monthly_report": ""
