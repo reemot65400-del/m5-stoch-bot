@@ -19,14 +19,6 @@
   },
   "open_trades": [
     {
-      "id": "6fdf44dd",
-      "symbol": "EURUSD=X",
-      "type": "PUT",
-      "entry_price": 1.1147029399871826,
-      "entry_time": "2026-10-28T16:00:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "014e2293",
       "symbol": "USDCHF=X",
       "type": "CALL",
@@ -575,6 +567,15 @@
       "exit_time": "2026-10-28T15:30:00+00:00",
       "win": true,
       "pips": 1.9478797912597656
+    },
+    {
+      "id": "6fdf44dd",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T16:00:00+00:00",
+      "exit_time": "2026-10-28T16:30:00+00:00",
+      "win": false,
+      "pips": 3.7288665771484375
     }
   ],
   "daily_counter_date": "2026-10-28",
