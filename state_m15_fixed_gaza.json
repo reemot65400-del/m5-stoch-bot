@@ -17,24 +17,7 @@
     "USDCHF=X": "2026-10-28T17:15:00+00:00",
     "EURCHF=X": "2026-10-28T07:15:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "114af722",
-      "symbol": "GBPJPY=X",
-      "type": "CALL",
-      "entry_price": 210.96200561523438,
-      "entry_time": "2026-10-29T20:00:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "99d3c5fb",
-      "symbol": "CADJPY=X",
-      "type": "CALL",
-      "entry_price": 112.75199890136719,
-      "entry_time": "2026-10-29T20:00:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -638,6 +621,24 @@
       "exit_time": "2026-10-29T14:00:00+00:00",
       "win": true,
       "pips": 6.70013427734375
+    },
+    {
+      "id": "114af722",
+      "symbol": "GBPJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-29T20:00:00+00:00",
+      "exit_time": "2026-10-29T20:30:00+00:00",
+      "win": true,
+      "pips": 3.7994384765625
+    },
+    {
+      "id": "99d3c5fb",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-29T20:00:00+00:00",
+      "exit_time": "2026-10-29T20:30:00+00:00",
+      "win": null,
+      "pips": 0.099945068359375
     }
   ],
   "daily_counter_date": "2026-10-29",
