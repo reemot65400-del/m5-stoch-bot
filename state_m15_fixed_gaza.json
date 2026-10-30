@@ -19,30 +19,6 @@
   },
   "open_trades": [
     {
-      "id": "ba64e909",
-      "symbol": "EURUSD=X",
-      "type": "CALL",
-      "entry_price": 1.1179429292678833,
-      "entry_time": "2026-10-30T12:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "4b7c1b52",
-      "symbol": "GBPUSD=X",
-      "type": "CALL",
-      "entry_price": 1.3407701253890991,
-      "entry_time": "2026-10-30T12:30:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "07a289ef",
-      "symbol": "NZDUSD=X",
-      "type": "CALL",
-      "entry_price": 0.5638886094093323,
-      "entry_time": "2026-10-30T12:30:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "d16b5a4e",
       "symbol": "USDCHF=X",
       "type": "PUT",
@@ -690,6 +666,33 @@
       "exit_time": "2026-10-30T07:15:00+00:00",
       "win": true,
       "pips": 5.500316619873047
+    },
+    {
+      "id": "ba64e909",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T12:30:00+00:00",
+      "exit_time": "2026-10-30T13:00:00+00:00",
+      "win": null,
+      "pips": 0.0
+    },
+    {
+      "id": "4b7c1b52",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T12:30:00+00:00",
+      "exit_time": "2026-10-30T13:00:00+00:00",
+      "win": false,
+      "pips": 3.235340118408203
+    },
+    {
+      "id": "07a289ef",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T12:30:00+00:00",
+      "exit_time": "2026-10-30T13:00:00+00:00",
+      "win": null,
+      "pips": 0.0
     }
   ],
   "daily_counter_date": "2026-10-30",
