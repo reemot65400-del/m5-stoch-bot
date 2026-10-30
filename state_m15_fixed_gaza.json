@@ -19,14 +19,6 @@
   },
   "open_trades": [
     {
-      "id": "d16b5a4e",
-      "symbol": "USDCHF=X",
-      "type": "PUT",
-      "entry_price": 0.8226199746131897,
-      "entry_time": "2026-10-30T12:45:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "5c816f93",
       "symbol": "USDCAD=X",
       "type": "PUT",
@@ -701,6 +693,15 @@
       "exit_time": "2026-10-30T13:00:00+00:00",
       "win": null,
       "pips": 0.0
+    },
+    {
+      "id": "d16b5a4e",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T12:45:00+00:00",
+      "exit_time": "2026-10-30T13:15:00+00:00",
+      "win": false,
+      "pips": 7.2002410888671875
     }
   ],
   "daily_counter_date": "2026-10-30",
