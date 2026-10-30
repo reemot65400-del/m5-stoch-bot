@@ -17,24 +17,7 @@
     "USDCHF=X": "2026-10-30T13:45:00+00:00",
     "EURCHF=X": "2026-10-30T07:45:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "8a8834db",
-      "symbol": "USDJPY=X",
-      "type": "PUT",
-      "entry_price": 157.47300720214844,
-      "entry_time": "2026-10-30T15:45:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "d0fd2267",
-      "symbol": "AUDJPY=X",
-      "type": "PUT",
-      "entry_price": 110.77200317382812,
-      "entry_time": "2026-10-30T15:45:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -728,6 +711,24 @@
       "exit_time": "2026-10-30T13:30:00+00:00",
       "win": false,
       "pips": 5.743503570556641
+    },
+    {
+      "id": "8a8834db",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T15:45:00+00:00",
+      "exit_time": "2026-10-30T16:15:00+00:00",
+      "win": true,
+      "pips": 5.70068359375
+    },
+    {
+      "id": "d0fd2267",
+      "symbol": "AUDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T15:45:00+00:00",
+      "exit_time": "2026-10-30T16:15:00+00:00",
+      "win": true,
+      "pips": 1.000213623046875
     }
   ],
   "daily_counter_date": "2026-10-30",
