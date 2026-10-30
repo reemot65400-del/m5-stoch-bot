@@ -1,6 +1,6 @@
 {
   "frozen_pairs": {
-    "USDJPY=X": "2026-10-28T19:30:00+00:00",
+    "USDJPY=X": "2026-10-30T16:45:00+00:00",
     "NZDJPY=X": "2026-10-20T12:45:00+00:00",
     "NZDUSD=X": "2026-10-30T13:30:00+00:00",
     "EURUSD=X": "2026-10-30T13:30:00+00:00",
@@ -12,12 +12,29 @@
     "EURGBP=X": "2026-10-29T07:45:00+00:00",
     "USDCAD=X": "2026-10-30T14:00:00+00:00",
     "CADJPY=X": "2026-10-29T21:00:00+00:00",
-    "AUDJPY=X": "2026-10-27T21:00:00+00:00",
+    "AUDJPY=X": "2026-10-30T16:45:00+00:00",
     "EURAUD=X": "2026-10-28T10:30:00+00:00",
     "USDCHF=X": "2026-10-30T13:45:00+00:00",
     "EURCHF=X": "2026-10-30T07:45:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "8a8834db",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_price": 157.47300720214844,
+      "entry_time": "2026-10-30T15:45:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "d0fd2267",
+      "symbol": "AUDJPY=X",
+      "type": "PUT",
+      "entry_price": 110.77200317382812,
+      "entry_time": "2026-10-30T15:45:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -714,7 +731,7 @@
     }
   ],
   "daily_counter_date": "2026-10-30",
-  "daily_signal_count": 8,
+  "daily_signal_count": 10,
   "last_daily_report": "2026-10-29",
   "last_weekly_report": "2026-W42",
   "last_monthly_report": ""
