@@ -71,8 +71,8 @@ STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
 TRADING_SYMBOLS = [
-    "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
-    "USDCAD=X", "NZDUSD=X", "EURGBP=X", "EURCHF=X",
+    "AUDNZD=X","GBPUSD=X", "USDJPY=X", "AUDUSD=X",
+    "USDCAD=X", "NZDUSD=X", "EURGBP=X", "GBPCAD=X",
     "GBPJPY=X", "AUDJPY=X", "CADJPY=X", "CHFJPY=X",
     "EURAUD=X", "USDCHF=X"
 ]
