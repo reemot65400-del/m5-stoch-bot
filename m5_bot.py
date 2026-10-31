@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v4.6 (Nuclear Timezone & Archive Rescue)
-الإصلاحات الهندسية النهائية في v4.6:
-1. ★★ الحل النووي لمشكلة الانزياح الزمني (+2 vs +3):
-   تم إلغاء الاعتماد الكلي على مكتبات التوقيت المعقدة (ZoneInfo/tz_convert).
-   بدلاً من ذلك، يتم استخراج "مفتاح التاريخ" (YYYY-MM-DD) مباشرة من نص exit_time الخام.
-   هذا يضمن أن كل صفقة تُنسب لليوم الصحيح بغض النظر عن إعدادات الخادم أو التوقيت الصيفي/الشتوي.
-2. ★★ إنقاذ الأرشيف التالف (Archive Rescue):
-   الصفقات التي كانت تُسقط كـ NaT بسبب فشل التحويل الزمني أصبحت الآن قابلة للقراءة
-   طالما أنها تحتوي على صيغة تاريخية أساسية صحيحة في أول 10 أحرف.
-3. ★★ ضمان وصول التقارير:
-   منطق تصفية يومي دقيق يلتقط صفقات الجمعة حتى لو كانت مخزنة بصيغ مختلفة أو بتوقيت UTC فقط.
+M15 Bollinger Trend Reversal Bot - v4.9 (Corrected Timezone Mapping)
+الإصلاحات الهندسية النهائية في v4.9:
+1. ★★ إصلاح جذري لخرائط التواريخ (Date Mapping Fix):
+   تم استبدال استخراج النص الخام (Raw String Extraction) بتحويل زمني دقيق.
+   الآن يتم تحويل وقت الخروج (UTC) إلى توقيت غزة (+3) قبل تحديد "يوم التداول".
+   هذا يمنع ضياع الصفقات الليلية (مثل تلك التي تغلق 23:50 غزة / 20:50 UTC).
+2. ★★ ضمان تسليم التقارير الأسبوعية والشهرية:
+   نافذة إرسال مفتوحة طوال يوم الأحد (للأسبوعي) وأول 3 أيام (للشهري) لضمان الوصول.
+3. ★★ الحفاظ التام على الاستراتيجية والحسم.
 """
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
@@ -30,7 +28,6 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 0. ثوابت التوقيت الآمنة (Safety Constants)
 # ═══════════════════════════════════════════════
-# نستخدم UTC كمرجع أساسي للحسابات الداخلية، لكننا نستخرج التاريخ كنص للتقارير
 PALESTINE_UTC_OFFSET_HOURS = 3 
 
 def get_palestine_now_safe() -> datetime:
@@ -41,7 +38,7 @@ def get_palestine_now_safe() -> datetime:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_6_NuclearFix"
+BOT_NAME = "M15_BB_Sniper_v4_9_CorrectMap"
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -130,10 +127,10 @@ class StateManager:
         if self.filepath.exists():
             try:
                 with open(self.filepath, 'r', encoding='utf-8') as f:
-                    loaded = json.load(f)
-                    for k in self.data.keys():
-                        if k in loaded:
-                            self.data[k] = loaded[k]
+                    loaded_data = json.load(f)
+                    for key in self.data.keys():
+                        if key in loaded_data:
+                            self.data[key] = loaded_data[key]
                 log.info("State loaded successfully.")
             except Exception as e:
                 log.error(f"Failed to load state: {e}. Starting fresh.")
@@ -202,7 +199,7 @@ class StateManager:
         self.save()
 
 # ═══════════════════════════════════════════════
-# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياً)
+# 3. محرك البيانات والاستراتيجية (لم يُمس حرفياَ)
 # ═══════════════════════════════════════════════
 
 def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
@@ -227,6 +224,7 @@ def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
         df = df[~df.index.duplicated()].sort_index().dropna()
 
         now_utc = pd.Timestamp.now(tz="UTC")
+        # حذف الشمعة الجارية فقط: 15 دقيقة إغلاق + دقيقتان هامش بيانات
         if not df.empty and df.index[-1] + pd.Timedelta(minutes=17) > now_utc: 
             df = df.iloc[:-1]
 
@@ -378,7 +376,7 @@ def resolve_pending_trades(sm: StateManager):
         sm.remove_open_trade(tid)
 
 # ═══════════════════════════════════════════════
-# 5. نظام التقارير المتقدم (★★ الحل النووي ★★)
+# 5. نظام التقارير المتقدم (★★ الإصلاح الجذري للتواريخ ★★)
 # ═══════════════════════════════════════════════
 
 AR_MONTHS = {
@@ -394,23 +392,30 @@ def ar_month_name(dt: datetime) -> str:
     return AR_MONTHS.get(dt.strftime("%m"), dt.strftime("%B"))
 
 
-def extract_raw_date_key(time_str: str) -> str:
+def convert_utc_to_gaza_date(time_str: str) -> str:
     """
-    ★★ وظيفة الإنقاذ الأساسية (النووية) ★★
-    تستخرج أول 10 أحرف من نص التاريخ (YYYY-MM-DD) وتتجاهل أي معلومات زمنية أخرى.
-    مثال: "2026-10-23T06:00:00+00:00" -> "2026-10-23"
-    مثال: "2026-10-23T06:00:00" -> "2026-10-23"
+    ★★ الوظيفة الحاسمة للإصلاح ★★
+    تحول نص الوقت (UTC) إلى كائن datetime، تضيف 3 ساعات (لتصبح غزة)،
+    ثم تستخرج التاريخ بالصيغة YYYY-MM-DD.
+    هذا يضمن أن صفقة الساعة 23:50 غزة (20:50 UTC) تُحسب ليوم الغد الصحيح.
     """
-    if not time_str or not isinstance(time_str, str):
+    try:
+        # 1. قراءة النص وتحويله لـ DateTime مع افتراض UTC إذا لم يكن هناك منطقة زمنية
+        dt_obj = pd.to_datetime(time_str, errors='coerce')
+        if pd.isna(dt_obj):
+            return ""
+        
+        # 2. التأكد من أن الكائن يحمل معلومات المنطقة الزمنية (أو نفترض UTC)
+        if dt_obj.tzinfo is None:
+            dt_obj = dt_obj.replace(tzinfo=timezone.utc)
+        
+        # 3. التحويل الفعلي لإزاحة غزة (+3)
+        gaza_dt = dt_obj.astimezone(timezone(timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)))
+        
+        # 4. استخراج مفتاح التاريخ المحلي
+        return gaza_dt.strftime("%Y-%m-%d")
+    except Exception:
         return ""
-    # ننظف المسافات ونأخذ أول 10 محارف
-    clean_str = time_str.strip()
-    if len(clean_str) >= 10:
-        candidate = clean_str[:10]
-        # تحقق سريع من الصيغة YYYY-MM-DD
-        if candidate.count('-') == 2 and candidate[4] == '-' and candidate[7] == '-':
-            return candidate
-    return ""
 
 
 def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -> bool:
@@ -428,50 +433,29 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
     df = df.copy()
 
-    if 'id' not in df.columns:
-        df['id'] = [f"row{i}" for i in range(len(df))]
-    if 'symbol' not in df.columns:
-        df['symbol'] = 'UNKNOWN'
-    if 'win' not in df.columns:
-        df['win'] = None
-    if 'pips' not in df.columns:
-        df['pips'] = 0.0
-    
-    # ★★ تعديل نووي: إنشاء عمود وهمي للتاريخ المحلي لعرض الساعات في التحليل العميق ★★
-    # نحن نستخدم raw_date_key للمقارنة، لكن لعرض "أفضل ساعة" نحتاج وقتاً تقريبيًا
-    # سنحاول استخلاص الساعة من exit_time الأصلي إذا أمكن، وإلا نضع 0
-    if 'exit_time' in df.columns:
-        def safe_extract_hour(t):
-            try:
-                parts = str(t).split('T')
-                if len(parts) > 1:
-                    h_part = parts[1][:2]
-                    if h_part.isdigit():
-                        return int(h_part)
-            except:
-                pass
-            return 0 # قيمة افتراضية
-        
-        df['approx_hour'] = df['exit_time'].apply(safe_extract_hour)
-    else:
-        df['approx_hour'] = 0
+    # تحصين الأعمدة الأساسية
+    required_cols = ['id', 'symbol', 'win', 'pips', 'gaza_date_key', 'approx_hour']
+    for col in required_cols:
+        if col not in df.columns:
+            if col == 'id': df[col] = [f"row{i}" for i in range(len(df))]
+            elif col == 'symbol': df[col] = 'UNKNOWN'
+            elif col == 'win': df[col] = None
+            elif col == 'pips': df[col] = 0.0
+            elif col == 'gaza_date_key': df[col] = ''
+            elif col == 'approx_hour': df[col] = 0
 
     df['pips'] = pd.to_numeric(df['pips'], errors='coerce').fillna(0.0)
-
-    df['signed_pips'] = np.where(
-        df['win'] == True, df['pips'],
-        np.where(df['win'] == False, -df['pips'], 0.0)
-    )
+    df['signed_pips'] = np.where(df['win'] == True, df['pips'], np.where(df['win'] == False, -df['pips'], 0.0))
 
     total = len(df)
     wins = int((df['win'] == True).sum())
     losses = int((df['win'] == False).sum())
     voids = int(df['win'].isna().sum())
-
     valid_trades = wins + losses
     wr = (wins / valid_trades * 100.0) if valid_trades > 0 else 0.0
     net_pips = float(df['signed_pips'].sum())
 
+    # إحصائيات الأزواج
     pair_stats = df.groupby('symbol', as_index=False).agg(
         trades=('id', 'count'),
         wins=('win', lambda x: int((x == True).sum())),
@@ -479,28 +463,24 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         pips=('signed_pips', 'sum')
     )
     pair_stats['valid'] = pair_stats['wins'] + pair_stats['losses']
-    pair_stats['wr'] = np.where(pair_stats['valid'] > 0,
-                                (pair_stats['wins'] / pair_stats['valid']) * 100.0, 0.0)
-
+    pair_stats['wr'] = np.where(pair_stats['valid'] > 0, (pair_stats['wins'] / pair_stats['valid']) * 100.0, 0.0)
+    
     valid_pairs = pair_stats[pair_stats['trades'] >= 2]
-    if valid_pairs.empty:
-        valid_pairs = pair_stats[pair_stats['trades'] >= 1]
+    if valid_pairs.empty: valid_pairs = pair_stats[pair_stats['trades'] >= 1]
 
+    best_pair_txt = "غير متاح"
+    worst_pair_txt = "غير متاح"
     if not valid_pairs.empty:
-        best_pair = valid_pairs.loc[valid_pairs['pips'].idxmax()]
-        worst_pair = valid_pairs.loc[valid_pairs['pips'].idxmin()]
-        best_pair_txt = f"🥇 {best_pair['symbol']} ({best_pair['pips']:+.1f} Pips, WR: {best_pair['wr']:.1f}%)"
-        
-        other_pairs = valid_pairs[valid_pairs['symbol'] != best_pair['symbol']]
-        if not other_pairs.empty:
-            worst_pair_txt = f"⚠️ {worst_pair['symbol']} ({worst_pair['pips']:+.1f} Pips, WR: {worst_pair['wr']:.1f}%)"
+        bp = valid_pairs.loc[valid_pairs['pips'].idxmax()]
+        wp = valid_pairs.loc[valid_pairs['pips'].idxmin()]
+        best_pair_txt = f"🥇 {bp['symbol']} ({bp['pips']:+.1f} Pips, WR: {bp['wr']:.1f}%)"
+        others = valid_pairs[valid_pairs['symbol'] != bp['symbol']]
+        if not others.empty:
+            worst_pair_txt = f"⚠️ {wp['symbol']} ({wp['pips']:+.1f} Pips, WR: {wp['wr']:.1f}%)"
         else:
-            worst_pair_txt = "لا يوجد (زوج واحد فقط تم التداول عليه)"
-    else:
-        best_pair_txt = "غير متاح"
-        worst_pair_txt = "غير متاح"
+            worst_pair_txt = "لا يوجد (زوج واحد فقط)"
 
-    # ★★ استخدام approx_hour للتحليل الزمني البسيط ★★
+    # إحصائيات الوقت (الساعة التقريبية من UTC + 3)
     hour_src = df['approx_hour']
     time_stats = df.assign(gaza_hour=hour_src).groupby('gaza_hour', as_index=False).agg(
         wins=('win', lambda x: int((x == True).sum())),
@@ -508,65 +488,49 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
         total=('id', 'count')
     )
     time_stats['valid'] = time_stats['wins'] + time_stats['losses']
-    time_stats['wr'] = np.where(time_stats['valid'] > 0,
-                                (time_stats['wins'] / time_stats['valid']) * 100.0, 0.0)
-    valid_times = time_stats[time_stats['total'] >= 2]
-    if valid_times.empty:
-        valid_times = time_stats[time_stats['total'] >= 1]
-
+    time_stats['wr'] = np.where(time_stats['valid'] > 0, (time_stats['wins'] / time_stats['valid']) * 100.0, 0.0)
+    vt = time_stats[time_stats['total'] >= 2]
+    if vt.empty: vt = time_stats[time_stats['total'] >= 1]
+    
     best_time_txt = "غير متاح"
-    if not valid_times.empty:
-        best_hour = valid_times.loc[valid_times['wr'].idxmax()]['gaza_hour']
-        if pd.notna(best_hour):
-            best_hour = int(best_hour)
-            best_time_txt = f"🕒 {best_hour:02d}:00 - {(best_hour + 1) % 24:02d}:00 (تقريبي)"
+    if not vt.empty:
+        bh = vt.loc[vt['wr'].idxmax()]['gaza_hour']
+        if pd.notna(bh):
+            bh_int = int(bh)
+            best_time_txt = f"🕒 {bh_int:02d}:00 - {(bh_int+1)%24:02d}:00 (تقريبي)"
 
-    # ★★ تحليل الأيام يعتمد على raw_date_key المستخرج سابقاَ ★★
-    day_src = df['raw_date_key'].dropna()
-    # نحول النص إلى datetime مؤقتاً لمعرفة اسم اليوم
+    # إحصائيات الأيام (بناءً على المفتاح المُصلح gaza_date_key)
+    day_src = df['gaza_date_key'].dropna()
     days_as_dates = pd.to_datetime(day_src, errors='coerce')
     valid_days_mask = days_as_dates.notna()
+    best_day_txt = "غير متاح"
     
     if valid_days_mask.any():
-        valid_days_df = df[valid_days_mask].copy()
-        valid_days_df['day_of_week'] = days_as_dates[valid_days_mask].dt.dayofweek
-        
-        day_stats = valid_days_df.groupby('day_of_week', as_index=False).agg(
+        vd_df = df[valid_days_mask].copy()
+        vd_df['day_of_week'] = days_as_dates[valid_days_mask].dt.dayofweek
+        ds = vd_df.groupby('day_of_week', as_index=False).agg(
             wins=('win', lambda x: int((x == True).sum())),
             losses=('win', lambda x: int((x == False).sum())),
             total=('id', 'count')
         )
-        day_stats['valid'] = day_stats['wins'] + day_stats['losses']
-        day_stats['wr'] = np.where(day_stats['valid'] > 0,
-                                   (day_stats['wins'] / day_stats['valid']) * 100.0, 0.0)
-        
-        valid_day_groups = day_stats[day_stats['total'] >= 2]
-        if valid_day_groups.empty:
-            valid_day_groups = day_stats[day_stats['total'] >= 1]
-            
-        best_day_txt = "غير متاح"
-        if not valid_day_groups.empty:
-            best_wd = valid_day_groups.loc[valid_day_groups['wr'].idxmax()]['day_of_week']
-            best_day_txt = f"📅 {AR_DAYS.get(int(best_wd), 'غير معروف')}"
-    else:
-        best_day_txt = "غير متاح"
+        ds['valid'] = ds['wins'] + ds['losses']
+        ds['wr'] = np.where(ds['valid'] > 0, (ds['wins'] / ds['valid']) * 100.0, 0.0)
+        vdg = ds[ds['total'] >= 2]
+        if vdg.empty: vdg = ds[ds['total'] >= 1]
+        if not vdg.empty:
+            bwd = vdg.loc[vdg['wr'].idxmax()]['day_of_week']
+            best_day_txt = f"📅 {AR_DAYS.get(int(bwd), 'غير معروف')}"
 
+    # شرائح JPY
     df['is_jpy'] = df['symbol'].astype(str).str.contains('JPY')
-    cat_stats = df.groupby('is_jpy', as_index=False).agg(
-        wins=('win', lambda x: int((x == True).sum())),
-        total=('id', 'count'),
-        pips=('signed_pips', 'sum')
-    )
-    cat_stats['name'] = cat_stats['is_jpy'].apply(lambda x: "أزواج الين (JPY)" if x else "الأزواج الرئيسية/الأخرى")
-    valid_cats = cat_stats[cat_stats['total'] >= 2]
-    if valid_cats.empty:
-        valid_cats = cat_stats[cat_stats['total'] >= 1]
-
-    if not valid_cats.empty:
-        best_cat_row = valid_cats.loc[valid_cats['pips'].idxmax()]
-        best_cat_txt = f"🌍 {best_cat_row['name']} ({best_cat_row['pips']:+.1f} Pips)"
-    else:
-        best_cat_txt = "غير متاح"
+    cs = df.groupby('is_jpy', as_index=False).agg(wins=('win', lambda x: int((x==True).sum())), total=('id','count'), pips=('signed_pips','sum'))
+    cs['name'] = cs['is_jpy'].apply(lambda x: "أزواج الين (JPY)" if x else "الأزواج الرئيسية/الأخرى")
+    vc = cs[cs['total'] >= 2]
+    if vc.empty: vc = cs[cs['total'] >= 1]
+    best_cat_txt = "غير متاح"
+    if not vc.empty:
+        bcr = vc.loc[vc['pips'].idxmax()]
+        best_cat_txt = f"🌍 {bcr['name']} ({bcr['pips']:+.1f} Pips)"
 
     emoji_wr = "🟢 ممتاز" if wr >= 60 else ("🟡 جيد" if wr >= 45 else "🔴 يحتاج مراجعة")
 
@@ -591,134 +555,132 @@ def send_detailed_report(df: pd.DataFrame, report_type: str, period_name: str) -
 
 def generate_advanced_reports(sm: StateManager):
     """
-    ★★ v4.6 — الحل النووي لتجاوز مشاكل التوقيت والأرشيف ★★
-    لا اعتماد على ZoneInfo ولا على tz_convert إطلاقاَ.
-    نستخرج التاريخ كنص خام ونقارنه مباشرة.
+    ★★ v4.9 — منطق التواريخ المصحح رياضياً ★★
     """
-    # نحصل على تاريخ الأمس كنص يدوياَ بناءَ على الوقت الحالي للسيرفر (UTC)
-    # ملاحظة: بما أن السوق مغلق ليلاَ والتقارير ترسل صباحاَ، فإن الفرق 
-    # بين UTC وغزة لا يؤثر على تصنيف "يوم التداول" إلا للحالات النادرة جداَ.
-    now_utc = datetime.now(timezone.utc)
-    yesterday_utc = now_utc - timedelta(days=1)
-    yesterday_str = yesterday_utc.strftime("%Y-%m-%d")
+    local_now = get_palestine_now_safe()
+    yesterday_local = local_now - timedelta(days=1)
+    yesterday_str = yesterday_local.strftime("%Y-%m-%d")
     
-    log.info(f"DEBUG v4.6: Target Date for Report is {yesterday_str} (based on UTC day before today)")
+    log.info(f"DEBUG v4.9: Gaza Now={local_now.strftime('%Y-%m-%d %H:%M')} | Target Yesterday={yesterday_str}")
 
     history = sm.data.get("trade_history", [])
-    log.info(f"DEBUG v4.6: Total raw history trades: {len(history)}")
-
     if not history:
         return
 
     df_hist = pd.DataFrame(history)
     
-    # ★★ الخطوة النووية: استخراج التاريخ من النص الخام مباشرة ★★
-    # نفترض أن exit_time محفوظ بصيغة ISO ("YYYY-MM-DDTHH:MM:SS...")
-    # نأخذ أول 10 أحرف فقط وهي تمثل التاريخ (YYYY-MM-DD)
+    # ★★ الخطوة الإصلاحية: إنشاء عمود جديد بالتاريخ المحلي الصحيح ★★
     if 'exit_time' in df_hist.columns:
-        # تطبيق دالة الاستخراج النووية
-        df_hist['raw_date_key'] = df_hist['exit_time'].apply(extract_raw_date_key)
+        # 1. تحويل كل صفقات الأرشفيف لاستخراج التاريخ المحلي (غزة)
+        df_hist['gaza_date_key'] = df_hist['exit_time'].apply(convert_utc_to_gaza_date)
         
-        # التحقق من صحة التنسيق التقريبي (يجب أن يكون غير فارغ)
-        valid_format_mask = df_hist['raw_date_key'] != ""
-        
-        dropped_count = (~valid_format_mask).sum()
+        # 2. استخراج الساعة التقريبية للتحليل (UTC Hour + 3)
+        def get_approx_gaza_hour(t_str):
+            try:
+                dt = pd.to_datetime(t_str, errors='coerce')
+                if pd.isna(dt): return 0
+                if dt.tzinfo is None: dt = dt.replace(tzinfo=timezone.utc)
+                gaza_dt = dt.astimezone(timezone(timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)))
+                return gaza_dt.hour
+            except: return 0
+        df_hist['approx_hour'] = df_hist['exit_time'].apply(get_approx_gaza_hour)
+
+        # 3. تصفية السجلات التالفة تماماً
+        valid_mask = df_hist['gaza_date_key'] != ""
+        dropped_count = (~valid_mask).sum()
         if dropped_count > 0:
-            log.warning(f"FIXED v4.6: Dropped {dropped_count} entries with unrecognizable date format.")
+            log.warning(f"FIXED v4.9: Dropped {dropped_count} entries with invalid dates.")
         
-        df_clean = df_hist[valid_format_mask].copy()
-        log.info(f"DEBUG v4.6: Valid trades after format check: {len(df_clean)}")
+        df_clean = df_hist[valid_mask].copy()
+        log.info(f"DEBUG v4.9: Clean trades count: {len(df_clean)}")
     else:
         log.error("CRITICAL: No 'exit_time' column found!")
         return
 
     # ─── 1. التقرير اليومي ───
-    # المقارنة الآن بسيطة ومباشرة: نص بنص
-    daily_df = df_clean[df_clean['raw_date_key'] == yesterday_str].copy()
+    daily_df = df_clean[df_clean['gaza_date_key'] == yesterday_str].copy()
     
-    log.info(f"DEBUG v4.6 MATCH: Found {len(daily_df)} trades matching date {yesterday_str}")
-
-    # إرسال التقرير (حتى لو فارغ لتسجيل اليوم ومنع التكرار)
-    # نحتاج لبناء period_name يدوياَ لأننا لم نعد نستخدم datetime objects للتواريخ
     try:
         dt_obj = datetime.strptime(yesterday_str, "%Y-%m-%d")
         daily_period_name = f"{AR_DAYS[dt_obj.weekday()]} {dt_obj.day} {ar_month_name(dt_obj)} {dt_obj.year}"
-    except Exception:
-        daily_period_name = yesterday_str # fallback
+    except:
+        daily_period_name = yesterday_str
         
     if sm.data.get("last_daily_report") != yesterday_str:
         log.info(f"Daily report due for {yesterday_str}...")
-        
-        send_detailed_report(daily_df, "اليومي", daily_period_name)
-        sm.data["last_daily_report"] = yesterday_str
-        sm.save()
-        log.info(f"Daily report CONFIRMED for {yesterday_str}")
-    else:
-         log.info(f"Daily report for {yesterday_str} already sent. Skipping.")
+        success = send_detailed_report(daily_df, "اليومي", daily_period_name)
+        if success:
+            sm.data["last_daily_report"] = yesterday_str
+            sm.save()
+            log.info(f"Daily report CONFIRMED for {yesterday_str}")
 
-    # ─── 2. التقرير الأسبوعي ───
-    # حساب الأسبوع الماضي بناءً على UTC
-    current_week_start = now_utc - timedelta(days=now_utc.weekday())
-    last_week_start = current_week_start - timedelta(days=7)
-    last_week_end = current_week_start - timedelta(seconds=1)
+    # ─── 2. التقرير الأسبوعي (نافذة مفتوحة: السبت والأحد) ───
+    # نستخدم weekday المحلي لغزة لتحديد النافذة
+    current_gaza_weekday = local_now.weekday() # 0=Mon ... 6=Sun
     
-    # نطاق تواريخ الأسبوع الماضي كنصوص
-    week_range_start_str = last_week_start.strftime("%Y-%m-%d")
-    week_range_end_str = last_week_end.strftime("%Y-%m-%d")
-    
-    # معرف الأسبوع السابق (ISO Year-Week)
-    iso_cal_last_week = last_week_start.isocalendar()
-    last_week_year, last_week_num, _ = iso_cal_last_week
-    last_week_str_id = f"{last_week_year}-W{last_week_num:02d}"
-    
-    weekly_period_name = (f"الأسبوع {last_week_num} "
-                          f"({last_week_start.day} {ar_month_name(last_week_start)} – "
-                          f"{last_week_end.day} {ar_month_name(last_week_end)} {last_week_end.year})")
-
-    if now_utc.weekday() == 6 and sm.data.get("last_weekly_report") != last_week_str_id:
-        log.info(f"Weekly report due for {last_week_str_id}...")
+    # إذا كان اليوم السبت (5) أو الأحد (6)، نحاول إرسال تقرير الأسبوع المنتهي
+    if current_gaza_weekday in [5, 6]:
+        # حساب نطاق الأسبوع الماضي (من الاثنين الماضي للأحد الماضي)
+        # ملاحظة: بما أننا في نهاية الأسبوع، فالأسبوع "المنتهي" هو الذي بدأ الاثنين قبل 6 أو 7 أيام
+        days_since_monday_this_week = current_gaza_weekday # 5 for Sat, 6 for Sun
+        last_week_start = local_now - timedelta(days=days_since_monday_this_week + 6)
+        last_week_end = local_now - timedelta(days=days_since_monday_this_week + 1) # Sunday of last week
         
-        if not df_clean.empty:
-            # فلتر النصي للأسبوع
-            weekly_df = df_clean[(df_clean['raw_date_key'] >= week_range_start_str) & 
-                                 (df_clean['raw_date_key'] <= week_range_end_str)].copy()
-        else:
-            weekly_df = pd.DataFrame()
+        week_range_start_str = last_week_start.strftime("%Y-%m-%d")
+        week_range_end_str = last_week_end.strftime("%Y-%m-%d")
+        
+        iso_cal_last_week = last_week_start.isocalendar()
+        last_week_year, last_week_num, _ = iso_cal_last_week
+        last_week_str_id = f"{last_week_year}-W{last_week_num:02d}"
+        
+        weekly_period_name = (f"الأسبوع {last_week_num} "
+                              f"({last_week_start.day} {ar_month_name(last_week_start)} – "
+                              f"{last_week_end.day} {ar_month_name(last_week_end)} {last_week_end.year})")
+
+        if sm.data.get("last_weekly_report") != last_week_str_id:
+            log.info(f"Weekly report window active. Checking for {last_week_str_id}...")
             
-        log.info(f"DEBUG v4.6 WEEKLY MATCH: Found {len(weekly_df)} trades for Week {last_week_num}")
+            if not df_clean.empty:
+                weekly_df = df_clean[(df_clean['gaza_date_key'] >= week_range_start_str) & 
+                                     (df_clean['gaza_date_key'] <= week_range_end_str)].copy()
+            else:
+                weekly_df = pd.DataFrame()
+                
+            log.info(f"DEBUG v4.9 WEEKLY MATCH: Found {len(weekly_df)} trades for Week {last_week_num}")
 
-        send_detailed_report(weekly_df, "الأسبوعي", weekly_period_name)
-        sm.data["last_weekly_report"] = last_week_str_id
-        sm.save()
-        log.info(f"Weekly report CONFIRMED for {last_week_str_id}")
+            success = send_detailed_report(weekly_df, "الأسبوعي", weekly_period_name)
+            if success:
+                sm.data["last_weekly_report"] = last_week_str_id
+                sm.save()
+                log.info(f"Weekly report CONFIRMED for {last_week_str_id}")
 
-    # ─── 3. التقرير الشهري ───
-    # الشهر الماضي
-    first_day_this_month = now_utc.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    last_day_prev_month = first_day_this_month - timedelta(days=1)
-    
-    month_range_start_str = last_day_prev_month.replace(day=1).strftime("%Y-%m-%d")
-    month_range_end_str = last_day_prev_month.strftime("%Y-%m-%d")
-    
-    monthly_period_name = f"{ar_month_name(last_day_prev_month)} {last_day_prev_month.year}"
-    last_month_str_id = last_day_prev_month.strftime("%Y-%m")
-
-    if now_utc.day == 1 and sm.data.get("last_monthly_report") != last_month_str_id:
-        log.info(f"Monthly report due for {last_month_str_id}...")
+    # ─── 3. التقرير الشهري (نافذة مفتوحة: أول 3 أيام من الشهر) ───
+    if local_now.day <= 3:
+        first_day_this_month = local_now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_prev_month = first_day_this_month - timedelta(days=1)
         
-        if not df_clean.empty:
-            # فلتر النصي للشهر
-            monthly_df = df_clean[(df_clean['raw_date_key'] >= month_range_start_str) & 
-                                  (df_clean['raw_date_key'] <= month_range_end_str)].copy()
-        else:
-            monthly_df = pd.DataFrame()
-            
-        log.info(f"DEBUG v4.6 MONTHLY MATCH: Found {len(monthly_df)} trades for Month {last_month_str_id}")
+        month_range_start_str = last_day_prev_month.replace(day=1).strftime("%Y-%m-%d")
+        month_range_end_str = last_day_prev_month.strftime("%Y-%m-%d")
+        
+        monthly_period_name = f"{ar_month_name(last_day_prev_month)} {last_day_prev_month.year}"
+        last_month_str_id = last_day_prev_month.strftime("%Y-%m")
 
-        send_detailed_report(monthly_df, "الشهري", monthly_period_name)
-        sm.data["last_monthly_report"] = last_month_str_id
-        sm.save()
-        log.info(f"Monthly report CONFIRMED for {last_month_str_id}")
+        if sm.data.get("last_monthly_report") != last_month_str_id:
+            log.info(f"Monthly report window active. Checking for {last_month_str_id}...")
+            
+            if not df_clean.empty:
+                monthly_df = df_clean[(df_clean['gaza_date_key'] >= month_range_start_str) & 
+                                      (df_clean['gaza_date_key'] <= month_range_end_str)].copy()
+            else:
+                monthly_df = pd.DataFrame()
+                
+            log.info(f"DEBUG v4.9 MONTHLY MATCH: Found {len(monthly_df)} trades for Month {last_month_str_id}")
+
+            success = send_detailed_report(monthly_df, "الشهري", monthly_period_name)
+            if success:
+                sm.data["last_monthly_report"] = last_month_str_id
+                sm.save()
+                log.info(f"Monthly report CONFIRMED for {last_month_str_id}")
 
 
 # ═══════════════════════════════════════════════
