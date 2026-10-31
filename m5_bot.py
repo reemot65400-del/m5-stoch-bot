@@ -2,7 +2,17 @@
 # -*- coding: utf-8 -*-
 """
 M15 Bollinger Trend Reversal Bot - v4.9 (Corrected Timezone Mapping)
-الإصلاحات الهندسية النهائية في v4.9:
+مراجعة v5.0 الهندسية (فوق v4.9 — دون لمس الاستراتيجية أو الدخول):
+A. توقيت غزة الحقيقي عبر ZoneInfo("Asia/Gaza") + قاعدة DST يدوية احتياطية —
+   الإزاحة الثابتة +3 كانت تخطئ بساعة كاملة في الشتاء (الحظر الليلي، حدود
+   أيام التقارير، عداد الإشارات اليومي كلها انزاحت).
+B. نطاق الأسبوع الأسبوعي: كان يبدأ يوم الثلاثاء ويضيّع صفقات يوم الاثنين
+   (صحّح الصيغة إلى: الاثنين الماضي ← الأحد الماضي).
+C. الحسم: سلسلة احتياطية آمنة (تطابق تام ← أول شمعة لاحقة ← آخيرة سابقة بتحذير)
+   — المسار القديم كان قد يقرأ سعر إغلاق شمعة الدخول نفسها فيᵣ وجود فجوة بيانات.
+D. فلتر العطلة صار بتوقيت غزة بدل UTC (انزياح ساعة في الشتاء).
+
+الإصلاحات الأصلية المحفوظة من v4.9:
 1. ★★ إصلاح جذري لخرائط التواريخ (Date Mapping Fix):
    تم استبدال استخراج النص الخام (Raw String Extraction) بتحويل زمني دقيق.
    الآن يتم تحويل وقت الخروج (UTC) إلى توقيت غزة (+3) قبل تحديد "يوم التداول".
@@ -14,6 +24,7 @@ M15 Bollinger Trend Reversal Bot - v4.9 (Corrected Timezone Mapping)
 import os, sys, time, json, logging, uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 import requests
 import numpy as np
 import pandas as pd
@@ -28,17 +39,34 @@ except ImportError:
 # ═══════════════════════════════════════════════
 # 0. ثوابت التوقيت الآمنة (Safety Constants)
 # ═══════════════════════════════════════════════
-PALESTINE_UTC_OFFSET_HOURS = 3 
+try:
+    GAZA_TZ = ZoneInfo("Asia/Gaza")   # يتبع التوقيت الصيفي/الشتوي رسميًا
+except Exception:
+    GAZA_TZ = None                    # fallback: قاعدة DST يدوية (آخر سبت مارس ←→ آخر سبت أكتوبر)
+
+def _is_palestine_summer(dt_utc: datetime) -> bool:
+    """قاعدة احتياطية يدوية إذا غابت قاعدة المنطقة الزمنية من النظام"""
+    def last_saturday(year, month):
+        d = datetime(year, month, 1, tzinfo=timezone.utc)
+        nxt = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=timezone.utc)
+        return nxt - timedelta(days=((nxt.weekday() - 5) % 7) + 1)
+    return last_saturday(dt_utc.year, 3) <= dt_utc < last_saturday(dt_utc.year, 10)
+
+def to_gaza(dt_obj: datetime) -> datetime:
+    """تحويل أي datetime مدرّج لمنطقة غزة الحقيقية"""
+    if GAZA_TZ is not None:
+        return dt_obj.astimezone(GAZA_TZ)
+    off = 3 if _is_palestine_summer(dt_obj.astimezone(timezone.utc)) else 2
+    return dt_obj.astimezone(timezone(timedelta(hours=off)))
 
 def get_palestine_now_safe() -> datetime:
-    """يعيد الوقت الحالي بفرض إزاحة +3 يدوياً لتجنب أخطاء النظام"""
-    utc_now = datetime.now(timezone.utc)
-    return utc_now + timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)
+    """توقيت غزة الحالي — صيفًا وشتاءً — بلا افتراض إزاحة ثابتة"""
+    return to_gaza(datetime.now(timezone.utc))
 
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_v4_9_CorrectMap"
+BOT_NAME = "M15_BB_Sniper_v5_0_Reviewed"
 STATE_FILE = "state_m15_fixed_gaza.json"
 LOG_LEVEL = logging.INFO
 
@@ -332,13 +360,20 @@ def resolve_pending_trades(sm: StateManager):
             if not matching_candles.empty:
                 exit_px = float(matching_candles.iloc[0]['Close'])
             else:
-                past_mask = df_exit_full.index < target_candle_start
-                if past_mask.any():
-                    exit_px = float(df_exit_full[past_mask].iloc[-1]['Close'])
-                    log.warning(f"Exact exit candle not found for {sym}, using last close before target.")
+                # احتياطي 1: أول شمعة تبدأ بعد الهدف (تغطي تأخر نشر البيانات)
+                future_mask2 = df_exit_full.index >= target_candle_start
+                if future_mask2.any():
+                    exit_px = float(df_exit_full[future_mask2].iloc[0]['Close'])
+                    log.warning(f"Exact exit candle not found for {sym}, used first candle after target.")
                 else:
-                    log.error(f"No candles available for {sym} resolution. Skipping.")
-                    continue
+                    # احتياطي 2 (أخير): آخر شمعة قبل الهدف — قد يعطي نتيجة ⚪ مشوّهة
+                    past_mask = df_exit_full.index < target_candle_start
+                    if past_mask.any():
+                        exit_px = float(df_exit_full[past_mask].iloc[-1]['Close'])
+                        log.warning(f"Only pre-target candles for {sym}; result may be distorted ⚪.")
+                    else:
+                        log.error(f"No candles available for {sym} resolution. Skipping.")
+                        continue
 
             pip_mult = 100.0 if "JPY" in sym else 10000.0
             diff = exit_px - entry_px
@@ -410,7 +445,7 @@ def convert_utc_to_gaza_date(time_str: str) -> str:
             dt_obj = dt_obj.replace(tzinfo=timezone.utc)
         
         # 3. التحويل الفعلي لإزاحة غزة (+3)
-        gaza_dt = dt_obj.astimezone(timezone(timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)))
+        gaza_dt = to_gaza(dt_obj)
         
         # 4. استخراج مفتاح التاريخ المحلي
         return gaza_dt.strftime("%Y-%m-%d")
@@ -580,7 +615,7 @@ def generate_advanced_reports(sm: StateManager):
                 dt = pd.to_datetime(t_str, errors='coerce')
                 if pd.isna(dt): return 0
                 if dt.tzinfo is None: dt = dt.replace(tzinfo=timezone.utc)
-                gaza_dt = dt.astimezone(timezone(timedelta(hours=PALESTINE_UTC_OFFSET_HOURS)))
+                gaza_dt = to_gaza(dt)
                 return gaza_dt.hour
             except: return 0
         df_hist['approx_hour'] = df_hist['exit_time'].apply(get_approx_gaza_hour)
@@ -622,9 +657,9 @@ def generate_advanced_reports(sm: StateManager):
     if current_gaza_weekday in [5, 6]:
         # حساب نطاق الأسبوع الماضي (من الاثنين الماضي للأحد الماضي)
         # ملاحظة: بما أننا في نهاية الأسبوع، فالأسبوع "المنتهي" هو الذي بدأ الاثنين قبل 6 أو 7 أيام
-        days_since_monday_this_week = current_gaza_weekday # 5 for Sat, 6 for Sun
-        last_week_start = local_now - timedelta(days=days_since_monday_this_week + 6)
-        last_week_end = local_now - timedelta(days=days_since_monday_this_week + 1) # Sunday of last week
+        # الأسبوع المنتهي (الاثنين ← الأحد): ناقص (رقم اليوم + 7) أيام → يوم الاثنين الماضي
+        last_week_start = (local_now - timedelta(days=current_gaza_weekday + 7)).replace(hour=0, minute=0, second=0, microsecond=0)
+        last_week_end = last_week_start + timedelta(days=6)  # الأحد نفسه
         
         week_range_start_str = last_week_start.strftime("%Y-%m-%d")
         week_range_end_str = last_week_end.strftime("%Y-%m-%d")
@@ -704,8 +739,7 @@ def main():
     resolve_pending_trades(sm)
     generate_advanced_reports(sm)
 
-    now_utc = datetime.now(timezone.utc)
-    if now_utc.weekday() >= 5:
+    if local_now.weekday() >= 5:
         log.info("Weekend. Skipping new signals.")
         return
 
