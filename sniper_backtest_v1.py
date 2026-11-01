@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-FINANCIAL SNIPER SYSTEM - BACKTEST ENGINE v1.0 (Tri-Confluence Strict Mode)
-الفلسفة: التقاطع الثلاثي الصارم + بروتوكول النجاة الذاتية.
-الهدف: إثبات وجود حافة إحصائية (Edge) قبل التفعيل الحي.
-المعايير: 
-1. EMA200 (H1) للاتجاه العام.
-2. ATR Channel (M15) للمنطقة الهيكلية.
-3. MACD Histogram Flip (M5) لزناد الزخم.
-4. إيقاف تلقائي بعد خسارتين متتاليتين (Simulated Survival Protocol).
+FINANCIAL SNIPER SYSTEM - BACKTEST ENGINE v1.2 (Resilient Data Loader Edition)
+الإصلاحات الجوهرية:
+1. ★★ حل مشكلة "Data Error": تم إضافة تأخير (Delay) بين الطلبات لتجنب حظر IP.
+2. ★★ تحسين المطابقة الزمنية: تم استخدام Merge بدلاَ من asof لضمان دقة التوقيت بين الأطر المختلفة.
+3. ★★ معالجة البيانات الناقصة: التحقق الصارم من توفر البيانات لكل إطار زمني قبل المعالجة.
 """
 import numpy as np
 import pandas as pd
 import yfinance as yf
 import warnings
-from datetime import datetime, timedelta
+import time # لإضافة التأخير بين الطلبات
 
 warnings.filterwarnings('ignore')
 
@@ -26,71 +23,110 @@ SYMBOLS = [
     "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
     "USDCAD=X", "NZDUSD=X", "EURGBP=X", "EURCHF=X",
     "GBPJPY=X", "AUDJPY=X", "CADJPY=X", "CHFJPY=X",
-    "EURAUD=X", "USDCHF=X", "AUDNZD=X", "GBPCAD=X" # Added optimized pairs
+    "EURAUD=X", "USDCHF=X", "AUDNZD=X", "GBPCAD=X"
 ]
 
-LOOKBACK_PERIOD = "1y"  # سنة واحدة كافية للاختبار الأولي دون إرهاق الموارد
-TIMEFRAME_MACRO = "1h"   # H1 for Trend
-TIMEFRAME_STRUCTURAL = "15m" # M15 for Zones
-TIMEFRAME_TRIGGER = "5m"     # M5 for Momentum
+LOOKBACK_PERIOD = "60d"  
+TIMEFRAME_MACRO = "1h"   
+TIMEFRAME_STRUCTURAL = "15m" 
+TIMEFRAME_TRIGGER = "5m"     
 
 BREAK_EVEN_WR = 0.5263 
 
 # --- INDICATOR SETTINGS ---
 EMA_PERIOD_MACRO = 200
 ATR_PERIOD_STRUCT = 14
-ATR_MULTIPLIER = 2.0       # نطاق واسع لتجنب الضوضاء الصغيرة
+ATR_MULTIPLIER = 2.0       
 MACD_FAST = 12
 MACD_SLOW = 26
 MACD_SIGNAL = 9
 
 # --- RISK MANAGEMENT SIMULATION ---
-MAX_CONSECUTIVE_LOSSES = 2 # Stop trading if we lose 2 in a row (simulating forced sleep)
+MAX_CONSECUTIVE_LOSSES = 2 
 
-def fetch_multi_timeframe_data(symbol):
+def fetch_and_merge_data(symbol):
     """
-    يجلب البيانات لثلاثة أطر زمنية مختلفة ويوحد الفهرس الزمني (Index) بدقة.
-    هذه هي الخطوة الأصعب تقنياً لضمان عدم حدوث Look-ahead Bias.
+    ★★ الدالة المحصنة ضد الأخطاء ★★
+    تجلب البيانات لثلاثة أطر وتدمجها في جدول واحد موحد الزمن.
     """
     try:
         ticker = yf.Ticker(symbol)
         
-        # جلب البيانات الخام
+        # جلب البيانات مع تأخير بسيط بين كل طلب لتجنب Rate Limiting
+        print(f"   Fetching H1...", end="", flush=True)
         df_h1 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_MACRO)
-        df_m15 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_STRUCTURAL)
-        df_m5 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_TRIGGER)
+        time.sleep(1) 
         
+        print(f" M15...", end="", flush=True)
+        df_m15 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_STRUCTURAL)
+        time.sleep(1)
+        
+        print(f" M5...")
+        df_m5 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_TRIGGER)
+        time.sleep(1) # انتظار أخير
+        
+        # التحقق من عدم وجود بيانات فارغة
         if df_h1.empty or df_m15.empty or df_m5.empty:
-            return None
+            raise ValueError(f"One of the dataframes is empty for {symbol}")
             
-        # تنظيف الأعمدة
-        for df in [df_h1, df_m15, df_m5]:
+        # تنظيف الأعمدة والفهارس
+        def clean_df(df):
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = [col[0] for col in df.columns]
-            df.dropna(subset=['Close'], inplace=True)
-            
-        # إعادة تشكيل الفهارس للتأكد من أنها Timestamps موحدة
-        df_h1.index = pd.to_datetime(df_h1.index, utc=True)
-        df_m15.index = pd.to_datetime(df_m15.index, utc=True)
-        df_m5.index = pd.to_datetime(df_m5.index, utc=True)
+            df.index = pd.to_datetime(df.index, utc=True)
+            return df[['Open', 'High', 'Low', 'Close']]
+
+        df_h1 = clean_df(df_h1)
+        df_m15 = clean_df(df_m15)
+        df_m5 = clean_df(df_m5)
         
-        return df_h1, df_m15, df_m5
+        # ★★ الدمج الذكي (Smart Merge) ★★
+        # نريد أن نحصل على قيم H1 و M15 المقابلة لكل شمعة M5
+        # نستخدم merge_asof لأننا نبحث عن أقرب قيمة سابقة أو مساوية للوقت الحالي
+        
+        # 1. دمج H1 مع M5
+        merged = pd.merge_asof(
+            df_m5.sort_index(), 
+            df_h1.sort_index()[['Close']].rename(columns={'Close': 'H1_Close'}), 
+            left_index=True, right_index=True, direction='backward'
+        )
+        
+        # 2. دمج M15 مع الناتج السابق
+        final_df = pd.merge_asof(
+            merged.sort_index(), 
+            df_m15.sort_index()[['Close', 'High', 'Low']].rename(columns={
+                'Close': 'M15_Close', 
+                'High': 'M15_High', 
+                'Low': 'M15_Low'
+            }), 
+            left_index=True, right_index=True, direction='backward'
+        )
+        
+        # إسقاط الصفوف التي لم تجد لها مطابقة (NaNs) في البداية بسبب عدم توفر بيانات سابقة
+        final_df.dropna(inplace=True)
+        
+        if len(final_df) < 100:
+             raise ValueError(f"Not enough aligned data after merge for {symbol}. Only {len(final_df)} rows.")
+             
+        return final_df
         
     except Exception as e:
-        print(f"Error fetching {symbol}: {e}")
+        print(f"\n   ❌ ERROR fetching/merging {symbol}: {e}")
         return None
 
-def calculate_indicators(df_h1, df_m15, df_m5):
+def calculate_indicators_on_merged(df):
     """
-    يحسب المؤشرات المطلوبة لكل إطار زمني.
+    يحسب المؤشرات مباشرة على الجدول المدمج الموحد.
     """
-    # 1. Macro Trend (H1) - EMA200
-    ema_200 = df_h1['Close'].ewm(span=EMA_PERIOD_MACRO, adjust=False).mean()
+    c_m5 = df['Close']
     
-    # 2. Structural Zone (M15) - ATR Channel
-    high_m15 = df_m15['High']
-    low_m15 = df_m15['Low']
-    close_m15 = df_m15['Close']
+    # 1. Macro Trend (من عمود H1_Close المدمج)
+    ema_200 = df['H1_Close'].ewm(span=EMA_PERIOD_MACRO, adjust=False).mean()
+    
+    # 2. Structural Zone (من أعمدة M15 المدمجة)
+    high_m15 = df['M15_High']
+    low_m15 = df['M15_Low']
+    close_m15 = df['M15_Close']
     
     tr_m15 = pd.concat([
         high_m15 - low_m15,
@@ -99,108 +135,77 @@ def calculate_indicators(df_h1, df_m15, df_m5):
     ], axis=1).max(axis=1)
     
     atr_m15 = tr_m15.rolling(window=ATR_PERIOD_STRUCT).mean()
-    
     sma_mid_m15 = close_m15.rolling(window=ATR_PERIOD_STRUCT).mean()
     upper_band_m15 = sma_mid_m15 + (atr_m15 * ATR_MULTIPLIER)
     lower_band_m15 = sma_mid_m15 - (atr_m15 * ATR_MULTIPLIER)
     
-    # 3. Momentum Trigger (M5) - MACD Histogram
-    exp1_m5 = df_m5['Close'].ewm(span=MACD_FAST, adjust=False).mean()
-    exp2_m5 = df_m5['Close'].ewm(span=MACD_SLOW, adjust=False).mean()
+    # 3. Momentum Trigger (M5 MACD)
+    exp1_m5 = c_m5.ewm(span=MACD_FAST, adjust=False).mean()
+    exp2_m5 = c_m5.ewm(span=MACD_SLOW, adjust=False).mean()
     macd_line_m5 = exp1_m5 - exp2_m5
     signal_line_m5 = macd_line_m5.ewm(span=MACD_SIGNAL, adjust=False).mean()
     histogram_m5 = macd_line_m5 - signal_line_m5
     
-    return {
-        'ema_200': ema_200,
-        'upper_band_m15': upper_band_m15,
-        'lower_band_m15': lower_band_m15,
-        'histogram_m5': histogram_m5,
-        'close_m5': df_m5['Close'],
-        'next_close_m5': df_m5['Close'].shift(-1) # السعر في الشمعة التالية للحسم
-    }
+    return df.assign(
+        EMA_200=ema_200,
+        UPPER_BAND_M15=upper_band_m15,
+        LOWER_BAND_M15=lower_band_m15,
+        HISTOGRAM_M5=histogram_m5,
+        NEXT_CLOSE_M5=c_m5.shift(-1) # السعر القادم للحسم
+    ).dropna(subset=['NEXT_CLOSE_M5']) # نتخلص من آخر صف لأنه لا يملك سعراً مستقبلياً
 
-def run_sniper_simulation(symbol, indicators, raw_df_m5):
+def run_sniper_simulation(symbol, df_processed):
     """
-    ينفذ منطق القنص الصارم عبر الزمن.
+    ينفذ منطق القنص على البيانات المجهزة مسبقاً.
     """
     trades = []
     consecutive_losses = 0
     is_sleeping = False
     sleep_until_index = None
     
-    n = len(indicators['close_m5'])
-    
-    # نتخطى أول 50 شمعة لعدم استقرار المؤشرات
+    n = len(df_processed)
     start_idx = 50 
     
-    for i in range(start_idx, n - 1):
-        timestamp = raw_df_m5.index[i]
-        
-        # --- بروتوكول النجاة: هل نحن في وضع السبات؟ ---
+    # استخراج المصفوفات لسرعة الوصول
+    closes = df_processed['Close'].values
+    next_closes = df_processed['NEXT_CLOSE_M5'].values
+    emas = df_processed['EMA_200'].values
+    lbs = df_processed['LOWER_BAND_M15'].values
+    ubs = df_processed['UPPER_BAND_M15'].values
+    hists = df_processed['HISTOGRAM_M5'].values
+    
+    for i in range(start_idx, n):
         if is_sleeping:
             if sleep_until_index and i < sleep_until_index:
-                continue # تخطي هذه الشمعة لأننا نائمون
+                continue 
             else:
-                is_sleeping = False # استيقظنا
-                consecutive_losses = 0 # أعد ضبط العداد
-                
-        curr_close_m5 = indicators['close_m5'].iloc[i]
-        next_close_m5 = indicators['next_close_m5'].iloc[i]
+                is_sleeping = False 
+                consecutive_losses = 0 
         
-        if pd.isna(curr_close_m5) or pd.isna(next_close_m5):
-            continue
-            
-        # جلب القيم الحرجة للمقارنة
-        # ملاحظة: يجب التأكد من أن الفهارس متوافقة زمنياً بين الأطر المختلفة
-        # هنا نفترض أن yfinance يوفر فهارس متزامنة تقريباً
+        curr_close = closes[i]
+        next_close = next_closes[i]
+        ema_val = emas[i]
+        lb_val = lbs[i]
+        ub_val = ubs[i]
+        hist_curr = hists[i]
+        hist_prev = hists[i-1]
         
-        try:
-            # 1. الاتجاه العام (H1)
-            # نجد أقرب قيمة EMA200 من H1 تتوافق مع وقت الشمعة الحالية في M5
-            ema_val = indicators['ema_200'].asof(timestamp)
-            
-            # 2. المنطقة الهيكلية (M15)
-            lb_val = indicators['lower_band_m15'].asof(timestamp)
-            ub_val = indicators['upper_band_m15'].asof(timestamp)
-            
-            # 3. الزناد (M5)
-            hist_curr = indicators['histogram_m5'].iloc[i]
-            hist_prev = indicators['histogram_m5'].iloc[i-1]
-            
-        except Exception:
-            continue # تخطي إذا حدث خطأ في المطابقة الزمنية
-            
-        if pd.isna(ema_val) or pd.isna(lb_val) or pd.isna(hist_curr):
-            continue
-            
         signal = None
         
-        # --- شرط الشراء (CALL) الصارم ---
-        # 1. السعر فوق EMA200 (اتجاه صاعد قوي)
-        # 2. السعر لمس أو كسر الحد السفلي لقناة ATR في M15 (منطقة تشبع بيعي هيكلي)
-        # 3. الهيستوجرام في M5 انقلب من سالب إلى موجب (زخم شراء جديد دخل السوق)
-        if (curr_close_m5 > ema_val and 
-            curr_close_m5 <= lb_val and 
+        # شرط الشراء الصارم
+        if (curr_close > ema_val and 
+            curr_close <= lb_val and 
             hist_prev <= 0 and hist_curr > 0):
             signal = "CALL"
             
-        # --- شرط البيع (PUT) الصارم ---
-        # 1. السعر تحت EMA200 (اتجاه هابط قوي)
-        # 2. السعر لمس أو تجاوز الحد العلوي لقناة ATR في M15 (منطقة تشبع شرائي هيكلي)
-        # 3. الهيستوجرام في M5 انقلب من موجب إلى سالب (زخم بيع جديد دخل السوق)
-        elif (curr_close_m5 < ema_val and 
-              curr_close_m5 >= ub_val and 
+        # شرط البيع الصارم
+        elif (curr_close < ema_val and 
+              curr_close >= ub_val and 
               hist_prev >= 0 and hist_curr < 0):
             signal = "PUT"
             
         if signal:
-            # حساب النتيجة (Win/Loss)
-            # نفترض أن العقد ينتهي بإغلاق الشمعة التالية في M5 (5 دقائق)
-            price_diff = next_close_m5 - curr_close_m5
-            
-            # خصم تكلفة وهمية بسيطة (Spread Simulation ~ 1 pip equivalent for simplicity)
-            # في الخيارات الثنائية، المهم هو الاتجاه وليس مقدار الحركة، لكننا نضيف هامش أمان
+            price_diff = next_close - curr_close
             spread_buffer = 0.0001 if "JPY" not in symbol else 0.01 
             
             win = False
@@ -211,17 +216,15 @@ def run_sniper_simulation(symbol, indicators, raw_df_m5):
                 
             trades.append(win)
             
-            # تطبيق بروتوكول النجاة
             if not win:
                 consecutive_losses += 1
                 if consecutive_losses >= MAX_CONSECUTIVE_LOSSES:
                     is_sleeping = True
-                    # نم لمدة تعادل 2 ساعات (24 شمعة M5) كمثال
                     sleep_duration_candles = 24 
                     sleep_until_index = i + sleep_duration_candles
-                    print(f"[{symbol}] ⚠️ SURVIVAL PROTOCOL ACTIVATED: Sleeping until index {sleep_until_index}")
+                    # print(f"[{symbol}] ⚠️ SLEEPING...") # تعليق للطباعة لتقليل الضوضاء
             else:
-                consecutive_losses = 0 # ربح => صفّر العداد
+                consecutive_losses = 0 
                 
     return trades
 
@@ -241,54 +244,62 @@ def analyze_results(all_trades):
 
 def main():
     print("="*70)
-    print("INITIATING FINANCIAL SNIPER BACKTEST v1.0")
+    print("INITIATING FINANCIAL SNIPER BACKTEST v1.2 (RESILIENT MODE)")
     print(f"Symbols: {len(SYMBOLS)} | Period: {LOOKBACK_PERIOD}")
-    print("Strategy: Tri-Confluence (EMA-H1 + ATR-M15 + MACD-M5)")
-    print("Risk Control: Auto-Sleep after 2 Consecutive Losses")
     print("="*70)
     
     global_trades = []
+    success_count = 0
     
     for sym in SYMBOLS:
-        print(f"\nProcessing {sym}...", end=" ")
-        data_tuple = fetch_multi_timeframe_data(sym)
-        if data_tuple is None:
-            print("Skipped (Data Error)")
+        print(f"\n>>> Processing {sym}:", end=" ")
+        
+        # 1. جلب ودمج البيانات بحذر
+        merged_df = fetch_and_merge_data(sym)
+        
+        if merged_df is None:
+            print("SKIPPED due to data issues.")
             continue
             
-        df_h1, df_m15, df_m5 = data_tuple
+        # 2. حساب المؤشرات
+        processed_df = calculate_indicators_on_merged(merged_df)
         
-        # حساب المؤشرات
-        indicators = calculate_indicators(df_h1, df_m15, df_m5)
-        
-        # تشغيل المحاكاة
-        trades = run_sniper_simulation(sym, indicators, df_m5)
+        if processed_df.empty:
+            print("SKIPPED: No valid indicators calculated.")
+            continue
+            
+        # 3. تشغيل المحاكاة
+        trades = run_sniper_simulation(sym, processed_df)
         
         stats = analyze_results(trades)
-        print(f"Done. Signals: {stats['count']}, WR: {stats['wr']*100:.2f}%")
+        print(f"DONE. Signals: {stats['count']}, WR: {stats['wr']*100:.2f}%")
         
         global_trades.extend(trades)
+        success_count += 1
         
-    # التقرير النهائي المجمّع
+    # التقرير النهائي
     final_stats = analyze_results(global_trades)
     
     print("\n" + "-"*70)
     print("FINAL COUNCIL VERDICT REPORT")
     print("-"*70)
-    print(f"Total Signals Generated: {final_stats['count']}")
-    print(f"Overall Win Rate:        {final_stats['wr']*100:.2f}%")
-    print(f"Z-Score (Significance):  {final_stats['z_score']:.2f}")
+    print(f"Symbols Successfully Processed: {success_count}/{len(SYMBOLS)}")
+    print(f"Total Signals Generated:        {final_stats['count']}")
+    print(f"Overall Win Rate:               {final_stats['wr']*100:.2f}%")
+    print(f"Z-Score (Significance):         {final_stats['z_score']:.2f}")
     
     verdict = "FAILING"
-    if final_stats['count'] >= 30: # حد أدنى للعينة
+    if final_stats['count'] >= 30: 
         if final_stats['wr'] >= 0.60 and final_stats['z_score'] > 1.96:
             verdict = "EXCELLENT 🏆 (Proceed to Live Paper Trading)"
         elif final_stats['wr'] >= BREAK_EVEN_WR and final_stats['z_score'] > 1.0:
             verdict = "VIABLE ⚠️ (Refine Parameters Before Live)"
         else:
             verdict = "FRAGILE ❌ (Do Not Trade Real Money)"
+    else:
+        verdict = "INSUFFICIENT DATA ❌ (Try increasing LOOKBACK_PERIOD or reducing strictness)"
             
-    print(f"\nVerdict:                 {verdict}")
+    print(f"\nVerdict:                      {verdict}")
     print("="*70)
 
 if __name__ == "__main__":
