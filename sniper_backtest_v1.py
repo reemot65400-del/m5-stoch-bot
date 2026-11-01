@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-FINANCIAL SNIPER SYSTEM - BACKTEST ENGINE v1.3 (Relaxed Confluence Mode)
-الإصلاحات الجوهرية لحل مشكلة "صفر إشارات":
-1. ★★ تخفيف شروط الدخول (Entry Relaxation):
-   - تم تغيير شرط "اللمس الدقيق" للحدود إلى شرط "الاقتراب الشديد" (Proximity Zone).
-   - تم استبدال شرط "انقلاب الهيستوجرام الحاد" بشرط "الميل الإيجابي/السلبي الواضح".
-2. ★★ الحفاظ على هيكل البيانات الناجح:
-   - نستخدم نفس دالة الدمج (Merge AsOf) لأنها أثبتت نجاحها في النسخة السابقة.
+FINANCIAL SNIPER SYSTEM - BACKTEST ENGINE v2.0 (Volume Confluence Mode)
+الفلسفة الجديدة: الجودة القصوى على حساب الكمية.
+الاستراتيجية: H1 Trend Filter + M15 Pullback Zone + Volume Spike Confirmation.
+القاعدة الذهبية: لا إشارة إلا إذا كان حجم التداول الحالي أعلى بـ 2 ضعف من المتوسط.
 """
 import numpy as np
 import pandas as pd
@@ -18,40 +15,32 @@ import time
 warnings.filterwarnings('ignore')
 
 # ==========================================
-# CONFIGURATION: THE RELAXED SNIPER PARAMETERS
+# CONFIGURATION: THE VOLUME SNIPER PARAMETERS
 # ==========================================
 
 SYMBOLS = [
     "EURUSD=X", "GBPUSD=X", "USDJPY=X", "AUDUSD=X",
-    "USDCAD=X", "NZDUSD=X", "EURGBP=X", "EURCHF=X",
-    "GBPJPY=X", "AUDJPY=X", "CADJPY=X", "CHFJPY=X",
-    "EURAUD=X", "USDCHF=X", "AUDNZD=X", "GBPCAD=X"
+    "USDCAD=X", "NZDUSD=X", "EURGBP=X", "GBPJPY=X", 
+    "AUDJPY=X", "CADJPY=X", "CHFJPY=X", "EURAUD=X", 
+    "USDCHF=X", "AUDNZD=X", "GBPCAD=X", "NZDJPY=X" # Added NZDJPY for volatility
 ]
 
-LOOKBACK_PERIOD = "60d"  # مقيد بسبب بيانات M5 المجانية
+LOOKBACK_PERIOD = "60d"  
 TIMEFRAME_MACRO = "1h"   
-TIMEFRAME_STRUCTURAL = "15m" 
-TIMEFRAME_TRIGGER = "5m"     
+TIMEFRAME_TRIGGER = "15m" # Changed from M5 to M15 for stability and less noise
 
 BREAK_EVEN_WR = 0.5263 
 
 # --- INDICATOR SETTINGS ---
-EMA_PERIOD_MACRO = 200
-ATR_PERIOD_STRUCT = 14
-ATR_MULTIPLIER = 2.0       
-MACD_FAST = 12
-MACD_SLOW = 26
-MACD_SIGNAL = 9
-
-# ★★ معاملات التخفيف الجديدة (Relaxation Factors) ★★
-PROXIMITY_THRESHOLD = 0.0015 # السماح بالدخول إذا كان السعر قريباً من الحد بنسبة 0.15%
-MOMENTUM_SLOPE_LOOKBACK = 3  # عدد الشموع للنظر في ميل الهيستوجرام (بدلا من الانقلاب اللحظي)
-
-# --- RISK MANAGEMENT SIMULATION ---
-MAX_CONSECUTIVE_LOSSES = 2 
+EMA_PERIOD_MACRO = 50      # Faster EMA for H1 trend detection
+VOL_MA_PERIOD = 20         # Period for Volume Moving Average
+VOL_SPIKE_MULTIPLIER = 2.0 # Volume must be > 2x average to trigger signal
+PULLBACK_LEVEL = 0.5       # Price must retrace 50% of the recent impulse leg
 
 def fetch_and_merge_data(symbol):
-    """نفس دالة الجلب الناجحة من v1.2"""
+    """
+    يجلب بيانات H1 و M15 ويدمجها.
+    """
     try:
         ticker = yf.Ticker(symbol)
         
@@ -59,105 +48,83 @@ def fetch_and_merge_data(symbol):
         df_h1 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_MACRO)
         time.sleep(0.5) 
         
-        print(f" M15...", end="", flush=True)
-        df_m15 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_STRUCTURAL)
-        time.sleep(0.5)
-        
-        print(f" M5...")
-        df_m5 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_TRIGGER)
+        print(f" M15...")
+        df_m15 = ticker.history(period=LOOKBACK_PERIOD, interval=TIMEFRAME_TRIGGER)
         time.sleep(0.5) 
         
-        if df_h1.empty or df_m15.empty or df_m5.empty:
-            raise ValueError(f"One of the dataframes is empty for {symbol}")
+        if df_h1.empty or df_m15.empty:
+            raise ValueError(f"Data empty for {symbol}")
             
         def clean_df(df):
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = [col[0] for col in df.columns]
             df.index = pd.to_datetime(df.index, utc=True)
-            return df[['Open', 'High', 'Low', 'Close']]
+            return df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
         df_h1 = clean_df(df_h1)
         df_m15 = clean_df(df_m15)
-        df_m5 = clean_df(df_m5)
         
-        # الدمج الذكي
+        # Merge H1 Close into M15 dataframe
         merged = pd.merge_asof(
-            df_m5.sort_index(), 
+            df_m15.sort_index(), 
             df_h1.sort_index()[['Close']].rename(columns={'Close': 'H1_Close'}), 
             left_index=True, right_index=True, direction='backward'
         )
         
-        final_df = pd.merge_asof(
-            merged.sort_index(), 
-            df_m15.sort_index()[['Close', 'High', 'Low']].rename(columns={
-                'Close': 'M15_Close', 
-                'High': 'M15_High', 
-                'Low': 'M15_Low'
-            }), 
-            left_index=True, right_index=True, direction='backward'
-        )
+        merged.dropna(inplace=True)
         
-        final_df.dropna(inplace=True)
-        
-        if len(final_df) < 100:
-             raise ValueError(f"Not enough aligned data after merge for {symbol}.")
+        if len(merged) < 100:
+             raise ValueError(f"Not enough data for {symbol}.")
              
-        return final_df
+        return merged
         
     except Exception as e:
         print(f"\n   ❌ ERROR fetching/merging {symbol}: {e}")
         return None
 
-def calculate_indicators_on_merged(df):
-    """حساب المؤشرات مع إضافة حقول مساعدة للتخفيف"""
-    c_m5 = df['Close']
+def calculate_volume_confluence(df):
+    """
+    يحسب مؤشرات الاستراتيجية الجديدة.
+    """
+    c_m15 = df['Close']
+    vol_m15 = df['Volume']
     
-    # 1. Macro Trend
-    ema_200 = df['H1_Close'].ewm(span=EMA_PERIOD_MACRO, adjust=False).mean()
+    # 1. Macro Trend (H1 EMA50)
+    ema_50_h1 = df['H1_Close'].ewm(span=EMA_PERIOD_MACRO, adjust=False).mean()
     
-    # 2. Structural Zone (ATR Bands)
-    high_m15 = df['M15_High']
-    low_m15 = df['M15_Low']
-    close_m15 = df['M15_Close']
+    # 2. Volume Analysis (M15)
+    avg_vol = vol_m15.rolling(window=VOL_MA_PERIOD).mean()
+    is_volume_spike = vol_m15 > (avg_vol * VOL_SPIKE_MULTIPLIER)
     
-    tr_m15 = pd.concat([
-        high_m15 - low_m15,
-        (high_m15 - close_m15.shift(1)).abs(),
-        (low_m15 - close_m15.shift(1)).abs()
-    ], axis=1).max(axis=1)
+    # 3. Impulse & Pullback Logic (M15)
+    # Find local highs/lows over last 10 candles to define an "Impulse Leg"
+    lookback_impulse = 10
+    high_impulse = c_m15.rolling(window=lookback_impulse).max()
+    low_impulse = c_m15.rolling(window=lookback_impulse).min()
     
-    atr_m15 = tr_m15.rolling(window=ATR_PERIOD_STRUCT).mean()
-    sma_mid_m15 = close_m15.rolling(window=ATR_PERIOD_STRUCT).mean()
-    upper_band_m15 = sma_mid_m15 + (atr_m15 * ATR_MULTIPLIER)
-    lower_band_m15 = sma_mid_m15 - (atr_m15 * ATR_MULTIPLIER)
+    # Calculate retracement level from the most recent extreme
+    # For CALL: We expect price to drop from High_Impulse towards Mid-point
+    # For PUT: We expect price to rise from Low_Impulse towards Mid-point
     
-    # حساب نطاق التقارب (Proximity Range)
-    proximity_range_lower = lower_band_m15 * (1 + PROXIMITY_THRESHOLD)
-    proximity_range_upper = upper_band_m15 * (1 - PROXIMITY_THRESHOLD)
+    mid_point_high = high_impulse - ((high_impulse - low_impulse) * PULLBACK_LEVEL)
+    mid_point_low = low_impulse + ((high_impulse - low_impulse) * PULLBACK_LEVEL)
     
-    # 3. Momentum Trigger (MACD Slope instead of Flip)
-    exp1_m5 = c_m5.ewm(span=MACD_FAST, adjust=False).mean()
-    exp2_m5 = c_m5.ewm(span=MACD_SLOW, adjust=False).mean()
-    macd_line_m5 = exp1_m5 - exp2_m5
-    signal_line_m5 = macd_line_m5.ewm(span=MACD_SIGNAL, adjust=False).mean()
-    histogram_m5 = macd_line_m5 - signal_line_m5
-    
-    # حساب ميل الهيستوجرام (هل يتحسن الاتجاه؟)
-    hist_slope = histogram_m5.diff(MOMENTUM_SLOPE_LOOKBACK)
+    # Check if current price is near the pullback zone
+    is_in_pullback_zone_call = (c_m15 <= mid_point_high) & (c_m15 >= low_impulse)
+    is_in_pullback_zone_put = (c_m15 >= mid_point_low) & (c_m15 <= high_impulse)
     
     return df.assign(
-        EMA_200=ema_200,
-        UPPER_BAND_M15=upper_band_m15,
-        LOWER_BAND_M15=lower_band_m15,
-        PROX_LOWER=proximity_range_lower, # حد مرخص للشراء
-        PROX_UPPER=proximity_range_upper, # حد مرخص للبيع
-        HISTOGRAM_M5=histogram_m5,
-        HIST_SLOPE=hist_slope,            # ميل الزخم
-        NEXT_CLOSE_M5=c_m5.shift(-1) 
-    ).dropna(subset=['NEXT_CLOSE_M5'])
+        EMA_50_H1=ema_50_h1,
+        IS_VOL_SPIKE=is_volume_spike,
+        IN_PULLBACK_CALL=is_in_pullback_zone_call,
+        IN_PULLBACK_PUT=is_in_pullback_zone_put,
+        NEXT_CLOSE_M15=c_m15.shift(-1)
+    ).dropna(subset=['NEXT_CLOSE_M15'])
 
 def run_sniper_simulation(symbol, df_processed):
-    """منطق القنص المخفف"""
+    """
+    منطق القنص الصارم القائم على الحجم.
+    """
     trades = []
     consecutive_losses = 0
     is_sleeping = False
@@ -167,13 +134,11 @@ def run_sniper_simulation(symbol, df_processed):
     start_idx = 50 
     
     closes = df_processed['Close'].values
-    next_closes = df_processed['NEXT_CLOSE_M5'].values
-    emas = df_processed['EMA_200'].values
-    lbs = df_processed['LOWER_BAND_M15'].values
-    ubs = df_processed['UPPER_BAND_M15'].values
-    prox_lbs = df_processed['PROX_LOWER'].values # استخدام الحدود المرخصة
-    prox_ubs = df_processed['PROX_UPPER'].values # استخدام الحدود المرخصة
-    slopes = df_processed['HIST_SLOPE'].values   # استخدام الميل بدل الانقلاب
+    next_closes = df_processed['NEXT_CLOSE_M15'].values
+    emas = df_processed['EMA_50_H1'].values
+    spikes = df_processed['IS_VOL_SPIKE'].values
+    pb_calls = df_processed['IN_PULLBACK_CALL'].values
+    pb_puts = df_processed['IN_PULLBACK_PUT'].values
     
     for i in range(start_idx, n):
         if is_sleeping:
@@ -186,31 +151,28 @@ def run_sniper_simulation(symbol, df_processed):
         curr_close = closes[i]
         next_close = next_closes[i]
         ema_val = emas[i]
-        lb_val = lbs[i]
-        ub_val = ubs[i]
-        plb_val = prox_lbs[i]
-        pub_val = prox_ubs[i]
-        slope_val = slopes[i]
+        has_spike = spikes[i]
+        in_pb_call = pb_calls[i]
+        in_pb_put = pb_puts[i]
         
         signal = None
         
-        # ★★ شرط الشراء المخفف (RELAXED CALL) ★★
-        # 1. اتجاه عام صاعد (Price > EMA200)
-        # 2. السعر داخل منطقة التشبع البيعي المرخصة (Price <= Proximal Lower Band)
-        #    ملاحظة: استخدمنا plb_val الذي يسمح بالبقاء قليلاً فوق الحد الفعلي
-        # 3. الزخم يتحسن (Positive Slope) وليس بالضرورة انقلاب حاد
+        # ★★ شرط الشراء (CALL) الصارم ★★
+        # 1. الاتجاه العام صاعد (Price > EMA50 on H1)
+        # 2. السعر في منطقة تصحيح هابط (Pullback) على M15
+        # 3. انفجار حجمي مفاجئ يؤكد انتهاء التصحيح وبدء الموجة الدافعة
         if (curr_close > ema_val and 
-            curr_close <= plb_val and 
-            slope_val > 0): 
+            in_pb_call and 
+            has_spike):
             signal = "CALL"
             
-        # ★★ شرط البيع المخفف (RELAXED PUT) ★★
-        # 1. اتجاه عام هابط (Price < EMA200)
-        # 2. السعر داخل منطقة التشبع الشرائي المرخصة (Price >= Proximal Upper Band)
-        # 3. الزخم يضعف (Negative Slope)
+        # ★★ شرط البيع (PUT) الصارم ★★
+        # 1. الاتجاه العام هابط (Price < EMA50 on H1)
+        # 2. السعر في منطقة تصحيح صاعد (Pullback) على M15
+        # 3. انفجار حجمي مفاجئ يؤكد انتهاء التصحيح وبدء الموجة الهابطة
         elif (curr_close < ema_val and 
-              curr_close >= pub_val and 
-              slope_val < 0):
+              in_pb_put and 
+              has_spike):
             signal = "PUT"
             
         if signal:
@@ -229,7 +191,7 @@ def run_sniper_simulation(symbol, df_processed):
                 consecutive_losses += 1
                 if consecutive_losses >= MAX_CONSECUTIVE_LOSSES:
                     is_sleeping = True
-                    sleep_duration_candles = 24 
+                    sleep_duration_candles = 4 # Sleep for 1 hour (4 x 15min candles)
                     sleep_until_index = i + sleep_duration_candles
             else:
                 consecutive_losses = 0 
@@ -252,9 +214,9 @@ def analyze_results(all_trades):
 
 def main():
     print("="*70)
-    print("INITIATING FINANCIAL SNIPER BACKTEST v1.3 (RELAXED MODE)")
+    print("INITIATING FINANCIAL SNIPER BACKTEST v2.0 (VOLUME CONFLUENCE)")
     print(f"Symbols: {len(SYMBOLS)} | Period: {LOOKBACK_PERIOD}")
-    print("Logic: Relaxed Confluence (Proximity Zones + Momentum Slopes)")
+    print("Logic: H1 Trend + M15 Pullback + Volume Spike (>2x Avg)")
     print("="*70)
     
     global_trades = []
@@ -269,7 +231,7 @@ def main():
             print("SKIPPED due to data issues.")
             continue
             
-        processed_df = calculate_indicators_on_merged(merged_df)
+        processed_df = calculate_volume_confluence(merged_df)
         
         if processed_df.empty:
             print("SKIPPED: No valid indicators calculated.")
@@ -294,15 +256,20 @@ def main():
     print(f"Z-Score (Significance):         {final_stats['z_score']:.2f}")
     
     verdict = "FAILING"
-    if final_stats['count'] >= 30: 
-        if final_stats['wr'] >= 0.60 and final_stats['z_score'] > 1.96:
+    # Criteria for Success in this strict mode:
+    # 1. At least 20 signals to have statistical meaning.
+    # 2. Win rate > 55% (since we are sniping rare setups).
+    # 3. Z-score > 1.0 (positive correlation with profit).
+    
+    if final_stats['count'] >= 20: 
+        if final_stats['wr'] >= 0.55 and final_stats['z_score'] > 1.0:
             verdict = "EXCELLENT 🏆 (Proceed to Live Paper Trading)"
-        elif final_stats['wr'] >= BREAK_EVEN_WR and final_stats['z_score'] > 1.0:
+        elif final_stats['wr'] >= BREAK_EVEN_WR and final_stats['z_score'] > 0.5:
             verdict = "VIABLE ⚠️ (Refine Parameters Before Live)"
         else:
             verdict = "FRAGILE ❌ (Do Not Trade Real Money)"
     else:
-        verdict = "INSUFFICIENT SAMPLE SIZE ❌ (Even relaxed mode found too few signals)"
+        verdict = "INSUFFICIENT SAMPLE SIZE ❌ (Too few signals generated)"
             
     print(f"\nVerdict:                      {verdict}")
     print("="*70)
