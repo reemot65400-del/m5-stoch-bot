@@ -18,16 +18,7 @@
     "EURCHF=X": "2026-10-30T07:45:00+00:00",
     "AUDNZD=X": "2026-11-02T16:30:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "c2302850",
-      "symbol": "AUDNZD=X",
-      "type": "PUT",
-      "entry_price": 1.246690034866333,
-      "entry_time": "2026-11-02T15:30:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -820,6 +811,15 @@
       "exit_time": "2026-11-02T15:15:00+00:00",
       "win": true,
       "pips": 3.598928451538086
+    },
+    {
+      "id": "c2302850",
+      "symbol": "AUDNZD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-02T15:30:00+00:00",
+      "exit_time": "2026-11-02T16:00:00+00:00",
+      "win": true,
+      "pips": 0.9000301361083984
     }
   ],
   "daily_counter_date": "2026-11-02",
