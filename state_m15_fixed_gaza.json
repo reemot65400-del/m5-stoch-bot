@@ -17,24 +17,7 @@
     "USDCHF=X": "2026-10-30T13:45:00+00:00",
     "EURCHF=X": "2026-10-30T07:45:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "5de85d02",
-      "symbol": "AUDUSD=X",
-      "type": "PUT",
-      "entry_price": 0.7021485567092896,
-      "entry_time": "2026-11-02T14:45:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "3861c136",
-      "symbol": "EURAUD=X",
-      "type": "CALL",
-      "entry_price": 1.5965100526809692,
-      "entry_time": "2026-11-02T14:45:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -809,6 +792,24 @@
       "exit_time": "2026-11-02T14:15:00+00:00",
       "win": false,
       "pips": 6.9000244140625
+    },
+    {
+      "id": "5de85d02",
+      "symbol": "AUDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-02T14:45:00+00:00",
+      "exit_time": "2026-11-02T15:15:00+00:00",
+      "win": true,
+      "pips": 1.971125602722168
+    },
+    {
+      "id": "3861c136",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-02T14:45:00+00:00",
+      "exit_time": "2026-11-02T15:15:00+00:00",
+      "win": true,
+      "pips": 3.598928451538086
     }
   ],
   "daily_counter_date": "2026-11-02",
