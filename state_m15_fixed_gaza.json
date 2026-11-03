@@ -18,16 +18,7 @@
     "EURCHF=X": "2026-10-30T07:45:00+00:00",
     "AUDNZD=X": "2026-11-03T14:30:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "b65b5ae0",
-      "symbol": "EURGBP=X",
-      "type": "PUT",
-      "entry_price": 0.8344399929046631,
-      "entry_time": "2026-11-03T15:45:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -847,6 +838,15 @@
       "exit_time": "2026-11-03T14:00:00+00:00",
       "win": false,
       "pips": 5.499124526977539
+    },
+    {
+      "id": "b65b5ae0",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-11-03T15:45:00+00:00",
+      "exit_time": "2026-11-03T16:15:00+00:00",
+      "win": true,
+      "pips": 1.2999773025512695
     }
   ],
   "daily_counter_date": "2026-11-03",
