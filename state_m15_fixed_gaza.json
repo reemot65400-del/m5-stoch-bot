@@ -19,16 +19,7 @@
     "AUDNZD=X": "2026-11-03T14:30:00+00:00",
     "GBPCAD=X": "2026-11-05T08:00:00+00:00"
   },
-  "open_trades": [
-    {
-      "id": "3e3056c9",
-      "symbol": "USDJPY=X",
-      "type": "CALL",
-      "entry_price": 158.23199462890625,
-      "entry_time": "2026-11-05T14:30:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -965,6 +956,15 @@
       "exit_time": "2026-11-05T14:15:00+00:00",
       "win": true,
       "pips": 2.700042724609375
+    },
+    {
+      "id": "3e3056c9",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-05T14:30:00+00:00",
+      "exit_time": "2026-11-05T15:00:00+00:00",
+      "win": false,
+      "pips": 12.799072265625
     }
   ],
   "daily_counter_date": "2026-11-05",
