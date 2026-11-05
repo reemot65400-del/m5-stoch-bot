@@ -253,7 +253,7 @@ def get_data(symbol: str, interval: str = "15m", period: str = "60d"):
 
         now_utc = pd.Timestamp.now(tz="UTC")
         # حذف الشمعة الجارية فقط: 15 دقيقة إغلاق + دقيقتان هامش بيانات
-        if not df.empty and df.index[-1] + pd.Timedelta(minutes=17) > now_utc: 
+        if not df.empty and df.index[-1] + pd.Timedelta(minutes=15) > now_utc: 
             df = df.iloc[:-1]
 
         if len(df) < EMA_TREND_PERIOD + 10:
