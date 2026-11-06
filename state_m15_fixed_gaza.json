@@ -1,6 +1,6 @@
 {
   "frozen_pairs": {
-    "USDJPY=X": "2026-11-05T15:30:00+00:00",
+    "USDJPY=X": "2026-11-06T16:15:00+00:00",
     "NZDJPY=X": "2026-10-20T12:45:00+00:00",
     "NZDUSD=X": "2026-11-06T13:15:00+00:00",
     "EURUSD=X": "2026-10-30T13:30:00+00:00",
@@ -19,7 +19,16 @@
     "AUDNZD=X": "2026-11-03T14:30:00+00:00",
     "GBPCAD=X": "2026-11-06T08:15:00+00:00"
   },
-  "open_trades": [],
+  "open_trades": [
+    {
+      "id": "a5206828",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_price": 158.13499450683594,
+      "entry_time": "2026-11-06T15:15:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1004,7 +1013,7 @@
     }
   ],
   "daily_counter_date": "2026-11-06",
-  "daily_signal_count": 3,
+  "daily_signal_count": 4,
   "last_daily_report": "2026-11-05",
   "last_weekly_report": "2026-W43",
   "last_monthly_report": "2026-10"
