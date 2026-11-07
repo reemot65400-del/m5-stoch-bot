@@ -1,9 +1,9 @@
-name: M15 BB Sniper Bot (State Persistent v4.0 - PRO)
+name: M15 BB Sniper Bot (State Persistent v5.2 - PRO)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'
+  repository_dispatch:
+    types: [trigger-m15-bot]
 
 permissions:
   contents: write
@@ -22,31 +22,43 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install yfinance pandas numpy requests tzdata
 
-      - name: Run M15 Bot Script
+      - name: Clean Hidden Chars & Run M15 Bot Script
         env:
           PYTHONUNBUFFERED: "1"
-          TZ: "Asia/Gaza"
+          TZ: "Asia/Hebron"
           TG_TOKEN: ${{ secrets.TG_TOKEN }}
           TG_CHAT: ${{ secrets.TG_CHAT }}
-        run: python m5_bot.py
+        run: |
+          python -c "p='m5_bot.py'; s=open(p,encoding='utf-8').read().replace('\u00a0',' ').replace('\u200b',''); open(p,'w',encoding='utf-8').write(s)"
+          python m5_bot.py
 
       - name: Persist bot state (Safe Pull, Commit & Push)
         if: always()
         run: |
-          git config user.name "m15-bot"
-          git config user.email "m15-bot@users.noreply.github.com"
-          
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          if [ -f "state_m15_v5_pro.json" ]; then
+            git add state_m15_v5_pro.json
+          fi
+
+          if [ -f "state_m15_fixed.json" ]; then
+            git add state_m15_fixed.json
+          fi
+
           if [ -f "state_m15_fixed_gaza.json" ]; then
             git add state_m15_fixed_gaza.json
           fi
@@ -54,8 +66,11 @@ jobs:
           if git diff --cached --quiet; then
             echo ">>> State unchanged. Nothing to commit."
           else
-            git commit -m "chore: persist bot state [skip ci]"
-            git pull --rebase --autostash origin ${{ github.ref_name }}
-            git push origin HEAD:${{ github.ref_name }}
+            git commit -m "chore: persist M15 bot state [skip ci]"
+            for i in 1 2 3; do
+              git pull --rebase --autostash origin ${{ github.ref_name }} && git push origin HEAD:${{ github.ref_name }} && break
+              echo ">>> Push retry $i..."
+              sleep 3
+            done
             echo ">>> State pushed to repository successfully."
           fi
