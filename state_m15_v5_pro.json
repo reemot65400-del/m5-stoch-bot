@@ -1,0 +1,1001 @@
+{
+  "frozen_pairs": {},
+  "open_trades": [],
+  "trade_history": [
+    {
+      "id": "c186d25b",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-16T07:30:00+00:00",
+      "exit_time": "2026-10-16T08:05:33.180339+00:00",
+      "win": true,
+      "pips": 1.49993896484375
+    },
+    {
+      "id": "c8cb1d39",
+      "symbol": "NZDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T12:30:00+00:00",
+      "exit_time": "2026-10-16T13:05:33.178967+00:00",
+      "win": false,
+      "pips": 3.800201416015625
+    },
+    {
+      "id": "4b1543f1",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T12:45:00+00:00",
+      "exit_time": "2026-10-16T13:20:34.655468+00:00",
+      "win": true,
+      "pips": 4.1610002517700195
+    },
+    {
+      "id": "1d9719a3",
+      "symbol": "NZDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T12:45:00+00:00",
+      "exit_time": "2026-10-16T13:20:34.655468+00:00",
+      "win": true,
+      "pips": 5.300140380859375
+    },
+    {
+      "id": "0cfc1502",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T15:45:00+00:00",
+      "exit_time": "2026-10-16T16:20:38.614701+00:00",
+      "win": false,
+      "pips": 7.569789886474609
+    },
+    {
+      "id": "318664d6",
+      "symbol": "EURJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T15:45:00+00:00",
+      "exit_time": "2026-10-16T16:20:38.614701+00:00",
+      "win": false,
+      "pips": 5.10101318359375
+    },
+    {
+      "id": "a5b7a8a3",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T16:00:00+00:00",
+      "exit_time": "2026-10-16T16:35:34.146360+00:00",
+      "win": false,
+      "pips": 1.2600421905517578
+    },
+    {
+      "id": "2cf488a0",
+      "symbol": "EURJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-16T16:00:00+00:00",
+      "exit_time": "2026-10-16T16:35:34.146360+00:00",
+      "win": true,
+      "pips": 10.0006103515625
+    },
+    {
+      "id": "ee7db7ab",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-19T06:00:00+00:00",
+      "exit_time": "2026-10-19T06:35:28.174000+00:00",
+      "win": true,
+      "pips": 1.4591217041015625
+    },
+    {
+      "id": "ea7a7e81",
+      "symbol": "GBPJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-19T07:00:00+00:00",
+      "exit_time": "2026-10-19T07:35:34.180100+00:00",
+      "win": true,
+      "pips": 1.10015869140625
+    },
+    {
+      "id": "8ad3f16e",
+      "symbol": "CHFJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-19T07:00:00+00:00",
+      "exit_time": "2026-10-19T07:35:34.180100+00:00",
+      "win": true,
+      "pips": 0.89874267578125
+    },
+    {
+      "id": "00f18b4f",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-19T07:15:00+00:00",
+      "exit_time": "2026-10-19T07:50:33.749681+00:00",
+      "win": true,
+      "pips": 1.9502639770507812
+    },
+    {
+      "id": "49879df7",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-19T07:45:00+00:00",
+      "exit_time": "2026-10-19T08:20:28.541818+00:00",
+      "win": true,
+      "pips": 9.570121765136719
+    },
+    {
+      "id": "653181ad",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-19T15:15:00+00:00",
+      "exit_time": "2026-10-19T15:50:07.884012+00:00",
+      "win": false,
+      "pips": 0.6997585296630859
+    },
+    {
+      "id": "396a2ee4",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-19T18:15:00+00:00",
+      "exit_time": "2026-10-19T18:48:53.792070+00:00",
+      "win": false,
+      "pips": 2.8002262115478516
+    },
+    {
+      "id": "9ec13b44",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-19T18:30:00+00:00",
+      "exit_time": "2026-10-19T19:05:30.706471+00:00",
+      "win": true,
+      "pips": 2.0003318786621094
+    },
+    {
+      "id": "4162a587",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-20T08:45:00+00:00",
+      "exit_time": "2026-10-20T09:20:35.353884+00:00",
+      "win": false,
+      "pips": 16.35432243347168
+    },
+    {
+      "id": "d605aaa7",
+      "symbol": "NZDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-20T12:15:00+00:00",
+      "exit_time": "2026-10-20T12:50:39.044559+00:00",
+      "win": true,
+      "pips": 4.2999267578125
+    },
+    {
+      "id": "956cf8db",
+      "symbol": "EURJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-20T13:45:00+00:00",
+      "exit_time": "2026-10-20T14:18:21.507426+00:00",
+      "win": true,
+      "pips": 2.60009765625
+    },
+    {
+      "id": "cb0007b8",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T06:00:00+00:00",
+      "exit_time": "2026-10-21T06:35:30.472140+00:00",
+      "win": true,
+      "pips": 2.1457672119140625
+    },
+    {
+      "id": "17284d86",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T11:15:00+00:00",
+      "exit_time": "2026-10-21T11:50:33.918627+00:00",
+      "win": true,
+      "pips": 2.700042724609375
+    },
+    {
+      "id": "7dde8541",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T11:45:00+00:00",
+      "exit_time": "2026-10-21T12:20:31.360805+00:00",
+      "win": true,
+      "pips": 2.40020751953125
+    },
+    {
+      "id": "d2947d69",
+      "symbol": "AUDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T13:30:00+00:00",
+      "exit_time": "2026-10-21T14:05:30.926877+00:00",
+      "win": true,
+      "pips": 1.89971923828125
+    },
+    {
+      "id": "0f2d79d1",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-21T15:00:00+00:00",
+      "exit_time": "2026-10-21T15:35:24.412985+00:00",
+      "win": true,
+      "pips": 4.535317420959473
+    },
+    {
+      "id": "016e7bfa",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-22T09:45:00+00:00",
+      "exit_time": "2026-10-22T10:20:28.203590+00:00",
+      "win": false,
+      "pips": 3.229379653930664
+    },
+    {
+      "id": "738514a5",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-22T10:00:00+00:00",
+      "exit_time": "2026-10-22T10:35:27.693982+00:00",
+      "win": false,
+      "pips": 5.1975250244140625
+    },
+    {
+      "id": "927b2ae0",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-22T10:15:00+00:00",
+      "exit_time": "2026-10-22T10:50:27.799293+00:00",
+      "win": false,
+      "pips": 3.4046173095703125
+    },
+    {
+      "id": "4a938310",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-22T11:00:00+00:00",
+      "exit_time": "2026-10-22T11:35:28.346667+00:00",
+      "win": false,
+      "pips": 1.798868179321289
+    },
+    {
+      "id": "4d154dd1",
+      "symbol": "EURAUD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-22T16:30:00+00:00",
+      "exit_time": "2026-10-22T17:00:00+00:00",
+      "win": true,
+      "pips": 5.199909210205078
+    },
+    {
+      "id": "271bcd8e",
+      "symbol": "CHFJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-22T18:00:00+00:00",
+      "exit_time": "2026-10-22T18:30:00+00:00",
+      "win": true,
+      "pips": 0.70037841796875
+    },
+    {
+      "id": "8f2d1e41",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-22T20:00:00+00:00",
+      "exit_time": "2026-10-22T20:30:00+00:00",
+      "win": true,
+      "pips": 4.127025604248047
+    },
+    {
+      "id": "caf333d7",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T05:30:00+00:00",
+      "exit_time": "2026-10-23T06:00:00+00:00",
+      "win": true,
+      "pips": 1.8000602722167969
+    },
+    {
+      "id": "58458c31",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:00:00+00:00",
+      "exit_time": "2026-10-23T06:30:00+00:00",
+      "win": true,
+      "pips": 1.2999773025512695
+    },
+    {
+      "id": "f7c8c858",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:15:00+00:00",
+      "exit_time": "2026-10-23T06:45:00+00:00",
+      "win": false,
+      "pips": 0.6002187728881836
+    },
+    {
+      "id": "12fc56e7",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 3.40118408203125
+    },
+    {
+      "id": "c42240d1",
+      "symbol": "GBPJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 14.9993896484375
+    },
+    {
+      "id": "eecf4c8e",
+      "symbol": "AUDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 0.799560546875
+    },
+    {
+      "id": "7c00cf25",
+      "symbol": "CADJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T06:30:00+00:00",
+      "exit_time": "2026-10-23T07:00:00+00:00",
+      "win": true,
+      "pips": 2.899932861328125
+    },
+    {
+      "id": "05f3534e",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T12:45:00+00:00",
+      "exit_time": "2026-10-23T13:15:00+00:00",
+      "win": true,
+      "pips": 7.534027099609375
+    },
+    {
+      "id": "b317c0e0",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T14:00:00+00:00",
+      "exit_time": "2026-10-23T14:30:00+00:00",
+      "win": true,
+      "pips": 3.4999847412109375
+    },
+    {
+      "id": "389a35f4",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-23T15:45:00+00:00",
+      "exit_time": "2026-10-23T16:15:00+00:00",
+      "win": false,
+      "pips": 0.6997585296630859
+    },
+    {
+      "id": "e033ffd7",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-26T05:30:00+00:00",
+      "exit_time": "2026-10-26T06:00:00+00:00",
+      "win": null,
+      "pips": 0.0
+    },
+    {
+      "id": "019d1b3c",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-26T06:00:00+00:00",
+      "exit_time": "2026-10-26T06:30:00+00:00",
+      "win": true,
+      "pips": 1.4799833297729492
+    },
+    {
+      "id": "3519c98b",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-26T06:00:00+00:00",
+      "exit_time": "2026-10-26T06:30:00+00:00",
+      "win": true,
+      "pips": 1.9490718841552734
+    },
+    {
+      "id": "f87def25",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-26T07:15:00+00:00",
+      "exit_time": "2026-10-26T07:45:00+00:00",
+      "win": false,
+      "pips": 2.918243408203125
+    },
+    {
+      "id": "88ada043",
+      "symbol": "GBPJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-26T10:30:00+00:00",
+      "exit_time": "2026-10-26T11:00:00+00:00",
+      "win": true,
+      "pips": 7.89947509765625
+    },
+    {
+      "id": "c15a22c1",
+      "symbol": "EURAUD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-26T14:30:00+00:00",
+      "exit_time": "2026-10-26T15:00:00+00:00",
+      "win": true,
+      "pips": 1.4996528625488281
+    },
+    {
+      "id": "e1027027",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-26T17:15:00+00:00",
+      "exit_time": "2026-10-26T17:45:00+00:00",
+      "win": true,
+      "pips": 2.5069713592529297
+    },
+    {
+      "id": "9f3b242a",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-27T09:00:00+00:00",
+      "exit_time": "2026-10-27T09:30:00+00:00",
+      "win": true,
+      "pips": 4.2999267578125
+    },
+    {
+      "id": "494e720a",
+      "symbol": "GBPUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-27T12:00:00+00:00",
+      "exit_time": "2026-10-27T12:30:00+00:00",
+      "win": false,
+      "pips": 1.2445449829101562
+    },
+    {
+      "id": "2a209824",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-27T14:45:00+00:00",
+      "exit_time": "2026-10-27T15:15:00+00:00",
+      "win": true,
+      "pips": 1.599884033203125
+    },
+    {
+      "id": "88880a71",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-27T15:30:00+00:00",
+      "exit_time": "2026-10-27T16:00:00+00:00",
+      "win": true,
+      "pips": 0.6002187728881836
+    },
+    {
+      "id": "eac994e8",
+      "symbol": "AUDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-27T20:00:00+00:00",
+      "exit_time": "2026-10-27T20:30:00+00:00",
+      "win": true,
+      "pips": 2.700042724609375
+    },
+    {
+      "id": "3413c375",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T06:15:00+00:00",
+      "exit_time": "2026-10-28T06:45:00+00:00",
+      "win": false,
+      "pips": 1.5997886657714844
+    },
+    {
+      "id": "95640f86",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T08:15:00+00:00",
+      "exit_time": "2026-10-28T08:45:00+00:00",
+      "win": true,
+      "pips": 2.4771690368652344
+    },
+    {
+      "id": "5db39021",
+      "symbol": "EURAUD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T09:30:00+00:00",
+      "exit_time": "2026-10-28T10:00:00+00:00",
+      "win": false,
+      "pips": 4.100799560546875
+    },
+    {
+      "id": "53192004",
+      "symbol": "USDCAD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-28T11:00:00+00:00",
+      "exit_time": "2026-10-28T11:30:00+00:00",
+      "win": false,
+      "pips": 6.899833679199219
+    },
+    {
+      "id": "9a4db65c",
+      "symbol": "USDCHF=X",
+      "type": "CALL",
+      "entry_time": "2026-10-28T12:00:00+00:00",
+      "exit_time": "2026-10-28T12:30:00+00:00",
+      "win": true,
+      "pips": 5.0002336502075195
+    },
+    {
+      "id": "41a5072b",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T12:00:00+00:00",
+      "exit_time": "2026-10-28T12:30:00+00:00",
+      "win": true,
+      "pips": 2.480745315551758
+    },
+    {
+      "id": "c7c962ef",
+      "symbol": "GBPUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T15:00:00+00:00",
+      "exit_time": "2026-10-28T15:30:00+00:00",
+      "win": true,
+      "pips": 1.9478797912597656
+    },
+    {
+      "id": "6fdf44dd",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T16:00:00+00:00",
+      "exit_time": "2026-10-28T16:30:00+00:00",
+      "win": false,
+      "pips": 3.7288665771484375
+    },
+    {
+      "id": "014e2293",
+      "symbol": "USDCHF=X",
+      "type": "CALL",
+      "entry_time": "2026-10-28T16:15:00+00:00",
+      "exit_time": "2026-10-28T16:45:00+00:00",
+      "win": false,
+      "pips": 0.9000301361083984
+    },
+    {
+      "id": "13579f34",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-28T18:30:00+00:00",
+      "exit_time": "2026-10-28T19:00:00+00:00",
+      "win": true,
+      "pips": 11.00006103515625
+    },
+    {
+      "id": "993fb5ff",
+      "symbol": "NZDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-28T18:30:00+00:00",
+      "exit_time": "2026-10-28T19:00:00+00:00",
+      "win": true,
+      "pips": 10.789036750793457
+    },
+    {
+      "id": "0608ab6d",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-29T05:45:00+00:00",
+      "exit_time": "2026-10-29T06:15:00+00:00",
+      "win": false,
+      "pips": 6.952881813049316
+    },
+    {
+      "id": "458e6876",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-29T06:45:00+00:00",
+      "exit_time": "2026-10-29T07:15:00+00:00",
+      "win": true,
+      "pips": 3.6001205444335938
+    },
+    {
+      "id": "4f767d71",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-29T13:30:00+00:00",
+      "exit_time": "2026-10-29T14:00:00+00:00",
+      "win": true,
+      "pips": 6.70013427734375
+    },
+    {
+      "id": "114af722",
+      "symbol": "GBPJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-29T20:00:00+00:00",
+      "exit_time": "2026-10-29T20:30:00+00:00",
+      "win": true,
+      "pips": 3.7994384765625
+    },
+    {
+      "id": "99d3c5fb",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-10-29T20:00:00+00:00",
+      "exit_time": "2026-10-29T20:30:00+00:00",
+      "win": null,
+      "pips": 0.099945068359375
+    },
+    {
+      "id": "7d1c13f7",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T06:45:00+00:00",
+      "exit_time": "2026-10-30T07:15:00+00:00",
+      "win": true,
+      "pips": 9.000301361083984
+    },
+    {
+      "id": "8bd028b1",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T06:45:00+00:00",
+      "exit_time": "2026-10-30T07:15:00+00:00",
+      "win": true,
+      "pips": 5.500316619873047
+    },
+    {
+      "id": "ba64e909",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T12:30:00+00:00",
+      "exit_time": "2026-10-30T13:00:00+00:00",
+      "win": null,
+      "pips": 0.0
+    },
+    {
+      "id": "4b7c1b52",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T12:30:00+00:00",
+      "exit_time": "2026-10-30T13:00:00+00:00",
+      "win": false,
+      "pips": 3.235340118408203
+    },
+    {
+      "id": "07a289ef",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T12:30:00+00:00",
+      "exit_time": "2026-10-30T13:00:00+00:00",
+      "win": null,
+      "pips": 0.0
+    },
+    {
+      "id": "d16b5a4e",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T12:45:00+00:00",
+      "exit_time": "2026-10-30T13:15:00+00:00",
+      "win": false,
+      "pips": 7.2002410888671875
+    },
+    {
+      "id": "5c816f93",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T13:00:00+00:00",
+      "exit_time": "2026-10-30T13:30:00+00:00",
+      "win": true,
+      "pips": 7.899999618530273
+    },
+    {
+      "id": "816adf8a",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-10-30T13:00:00+00:00",
+      "exit_time": "2026-10-30T13:30:00+00:00",
+      "win": false,
+      "pips": 5.743503570556641
+    },
+    {
+      "id": "8a8834db",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T15:45:00+00:00",
+      "exit_time": "2026-10-30T16:15:00+00:00",
+      "win": true,
+      "pips": 5.70068359375
+    },
+    {
+      "id": "d0fd2267",
+      "symbol": "AUDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T15:45:00+00:00",
+      "exit_time": "2026-10-30T16:15:00+00:00",
+      "win": true,
+      "pips": 1.000213623046875
+    },
+    {
+      "id": "bb7518b6",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T18:30:00+00:00",
+      "exit_time": "2026-10-30T19:00:00+00:00",
+      "win": true,
+      "pips": 1.3995170593261719
+    },
+    {
+      "id": "82a29b96",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_time": "2026-10-30T19:30:00+00:00",
+      "exit_time": "2026-10-30T20:00:00+00:00",
+      "win": true,
+      "pips": 9.800195693969727
+    },
+    {
+      "id": "96c3b05d",
+      "symbol": "NZDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-02T07:15:00+00:00",
+      "exit_time": "2026-11-02T07:45:00+00:00",
+      "win": true,
+      "pips": 1.5813112258911133
+    },
+    {
+      "id": "dfd3f7ec",
+      "symbol": "NZDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-02T08:00:00+00:00",
+      "exit_time": "2026-11-02T08:30:00+00:00",
+      "win": false,
+      "pips": 4.436969757080078
+    },
+    {
+      "id": "5d758ff7",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-02T13:30:00+00:00",
+      "exit_time": "2026-11-02T14:00:00+00:00",
+      "win": true,
+      "pips": 3.59954833984375
+    },
+    {
+      "id": "874fb820",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-02T13:30:00+00:00",
+      "exit_time": "2026-11-02T14:00:00+00:00",
+      "win": true,
+      "pips": 1.10015869140625
+    },
+    {
+      "id": "18a252b7",
+      "symbol": "GBPJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-02T13:45:00+00:00",
+      "exit_time": "2026-11-02T14:15:00+00:00",
+      "win": false,
+      "pips": 6.9000244140625
+    },
+    {
+      "id": "5de85d02",
+      "symbol": "AUDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-02T14:45:00+00:00",
+      "exit_time": "2026-11-02T15:15:00+00:00",
+      "win": true,
+      "pips": 1.971125602722168
+    },
+    {
+      "id": "3861c136",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-02T14:45:00+00:00",
+      "exit_time": "2026-11-02T15:15:00+00:00",
+      "win": true,
+      "pips": 3.598928451538086
+    },
+    {
+      "id": "c2302850",
+      "symbol": "AUDNZD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-02T15:30:00+00:00",
+      "exit_time": "2026-11-02T16:00:00+00:00",
+      "win": true,
+      "pips": 0.9000301361083984
+    },
+    {
+      "id": "66f7e88f",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-02T18:15:00+00:00",
+      "exit_time": "2026-11-02T18:45:00+00:00",
+      "win": false,
+      "pips": 2.516508102416992
+    },
+    {
+      "id": "27f680a7",
+      "symbol": "AUDNZD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-03T13:30:00+00:00",
+      "exit_time": "2026-11-03T14:00:00+00:00",
+      "win": false,
+      "pips": 5.499124526977539
+    },
+    {
+      "id": "b65b5ae0",
+      "symbol": "EURGBP=X",
+      "type": "PUT",
+      "entry_time": "2026-11-03T15:45:00+00:00",
+      "exit_time": "2026-11-03T16:15:00+00:00",
+      "win": true,
+      "pips": 1.2999773025512695
+    },
+    {
+      "id": "39cb0754",
+      "symbol": "GBPCAD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-04T12:30:00+00:00",
+      "exit_time": "2026-11-04T13:00:00+00:00",
+      "win": false,
+      "pips": 3.4999847412109375
+    },
+    {
+      "id": "19e6ed70",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-04T15:15:00+00:00",
+      "exit_time": "2026-11-04T15:45:00+00:00",
+      "win": true,
+      "pips": 3.9321184158325195
+    },
+    {
+      "id": "d1630fad",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-04T15:15:00+00:00",
+      "exit_time": "2026-11-04T15:45:00+00:00",
+      "win": true,
+      "pips": 3.7932395935058594
+    },
+    {
+      "id": "8bd46330",
+      "symbol": "GBPJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-04T15:45:00+00:00",
+      "exit_time": "2026-11-04T16:15:00+00:00",
+      "win": true,
+      "pips": 0.799560546875
+    },
+    {
+      "id": "73ef250c",
+      "symbol": "GBPJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-04T16:30:00+00:00",
+      "exit_time": "2026-11-04T17:00:00+00:00",
+      "win": null,
+      "pips": 0.0
+    },
+    {
+      "id": "c0f7a7e6",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-04T16:30:00+00:00",
+      "exit_time": "2026-11-04T17:00:00+00:00",
+      "win": false,
+      "pips": 3.899383544921875
+    },
+    {
+      "id": "312a6275",
+      "symbol": "EURGBP=X",
+      "type": "CALL",
+      "entry_time": "2026-11-05T07:00:00+00:00",
+      "exit_time": "2026-11-05T07:30:00+00:00",
+      "win": false,
+      "pips": 2.0003318786621094
+    },
+    {
+      "id": "adf979e9",
+      "symbol": "GBPCAD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-05T07:00:00+00:00",
+      "exit_time": "2026-11-05T07:30:00+00:00",
+      "win": false,
+      "pips": 12.899637222290039
+    },
+    {
+      "id": "e89381b7",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-05T07:15:00+00:00",
+      "exit_time": "2026-11-05T07:45:00+00:00",
+      "win": false,
+      "pips": 4.721879959106445
+    },
+    {
+      "id": "d13b65e2",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_time": "2026-11-05T07:15:00+00:00",
+      "exit_time": "2026-11-05T07:45:00+00:00",
+      "win": true,
+      "pips": 2.9998779296875
+    },
+    {
+      "id": "688f7e27",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-11-05T07:15:00+00:00",
+      "exit_time": "2026-11-05T07:45:00+00:00",
+      "win": true,
+      "pips": 0.9000301361083984
+    },
+    {
+      "id": "6bf3fcc6",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-05T13:45:00+00:00",
+      "exit_time": "2026-11-05T14:15:00+00:00",
+      "win": true,
+      "pips": 2.700042724609375
+    },
+    {
+      "id": "3e3056c9",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-05T14:30:00+00:00",
+      "exit_time": "2026-11-05T15:00:00+00:00",
+      "win": false,
+      "pips": 12.799072265625
+    },
+    {
+      "id": "1874b45c",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_time": "2026-11-05T19:15:00+00:00",
+      "exit_time": "2026-11-05T19:45:00+00:00",
+      "win": false,
+      "pips": 8.199810981750488
+    },
+    {
+      "id": "8badcecb",
+      "symbol": "GBPCAD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-06T07:15:00+00:00",
+      "exit_time": "2026-11-06T07:45:00+00:00",
+      "win": false,
+      "pips": 3.8003921508789062
+    },
+    {
+      "id": "86b06394",
+      "symbol": "NZDUSD=X",
+      "type": "PUT",
+      "entry_time": "2026-11-06T12:15:00+00:00",
+      "exit_time": "2026-11-06T12:45:00+00:00",
+      "win": false,
+      "pips": 0.6163120269775391
+    },
+    {
+      "id": "1d537444",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_time": "2026-11-06T14:30:00+00:00",
+      "exit_time": "2026-11-06T15:00:00+00:00",
+      "win": false,
+      "pips": 4.800558090209961
+    },
+    {
+      "id": "a5206828",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_time": "2026-11-06T15:15:00+00:00",
+      "exit_time": "2026-11-06T15:45:00+00:00",
+      "win": true,
+      "pips": 11.50054931640625
+    }
+  ],
+  "daily_counter_date": "",
+  "daily_signal_count": 0,
+  "last_daily_report": "2026-11-06",
+  "last_weekly_report": "2026-W44",
+  "last_monthly_report": ""
+}
