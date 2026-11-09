@@ -1,8 +1,5 @@
 {
-  "frozen_pairs": {
-    "EURNZD=X": "2026-11-09T08:45:00+00:00",
-    "GBPNZD=X": "2026-11-09T08:45:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "f7d08934",
