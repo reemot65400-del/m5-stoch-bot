@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "8f192652",
-      "symbol": "USDJPY=X",
-      "type": "PUT",
-      "entry_price": 158.08799743652344,
-      "entry_time": "2026-11-09T14:30:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "6f12c46d",
       "symbol": "EURNZD=X",
       "type": "PUT",
@@ -1043,6 +1035,17 @@
       "exit_time": "2026-11-09T08:45:00+00:00",
       "win": true,
       "pips": 16.2
+    },
+    {
+      "id": "8f192652",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_price": 158.08799743652344,
+      "exit_price": 158.08299255371094,
+      "entry_time": "2026-11-09T14:30:00+00:00",
+      "exit_time": "2026-11-09T15:00:00+00:00",
+      "win": true,
+      "pips": 0.5
     }
   ],
   "daily_counter_date": "2026-11-09",
