@@ -1,6 +1,6 @@
 {
   "frozen_pairs": {
-    "USDJPY=X": "2026-11-09T15:00:00+00:00"
+    "EURNZD=X": "2026-11-09T15:15:00+00:00"
   },
   "open_trades": [
     {
@@ -9,6 +9,14 @@
       "type": "PUT",
       "entry_price": 158.08799743652344,
       "entry_time": "2026-11-09T14:30:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "6f12c46d",
+      "symbol": "EURNZD=X",
+      "type": "PUT",
+      "entry_price": 1.9961199760437012,
+      "entry_time": "2026-11-09T14:45:00+00:00",
       "msg_id": true
     }
   ],
@@ -1038,7 +1046,7 @@
     }
   ],
   "daily_counter_date": "2026-11-09",
-  "daily_signal_count": 4,
+  "daily_signal_count": 5,
   "last_daily_report": "2026-11-08",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
