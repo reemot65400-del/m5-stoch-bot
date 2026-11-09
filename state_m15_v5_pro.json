@@ -5,14 +5,6 @@
   },
   "open_trades": [
     {
-      "id": "9b217d4d",
-      "symbol": "GBPUSD=X",
-      "type": "PUT",
-      "entry_price": 1.3402849435806274,
-      "entry_time": "2026-11-09T08:00:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "f7d08934",
       "symbol": "EURNZD=X",
       "type": "PUT",
@@ -1019,6 +1011,17 @@
       "exit_time": "2026-11-06T15:45:00+00:00",
       "win": true,
       "pips": 11.50054931640625
+    },
+    {
+      "id": "9b217d4d",
+      "symbol": "GBPUSD=X",
+      "type": "PUT",
+      "entry_price": 1.3402849435806274,
+      "exit_price": 1.3410038948059082,
+      "entry_time": "2026-11-09T08:00:00+00:00",
+      "exit_time": "2026-11-09T08:30:00+00:00",
+      "win": false,
+      "pips": 7.19
     }
   ],
   "daily_counter_date": "2026-11-09",
