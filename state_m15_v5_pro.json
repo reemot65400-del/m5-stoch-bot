@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "6f12c46d",
-      "symbol": "EURNZD=X",
-      "type": "PUT",
-      "entry_price": 1.9961199760437012,
-      "entry_time": "2026-11-09T14:45:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "b11fe572",
       "symbol": "EURNZD=X",
       "type": "PUT",
@@ -1054,6 +1046,17 @@
       "exit_time": "2026-11-09T15:00:00+00:00",
       "win": true,
       "pips": 0.5
+    },
+    {
+      "id": "6f12c46d",
+      "symbol": "EURNZD=X",
+      "type": "PUT",
+      "entry_price": 1.9961199760437012,
+      "exit_price": 1.9970799684524536,
+      "entry_time": "2026-11-09T14:45:00+00:00",
+      "exit_time": "2026-11-09T15:15:00+00:00",
+      "win": false,
+      "pips": 9.6
     }
   ],
   "daily_counter_date": "2026-11-09",
