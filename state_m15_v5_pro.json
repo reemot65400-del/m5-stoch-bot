@@ -1,23 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "f7d08934",
-      "symbol": "EURNZD=X",
-      "type": "PUT",
-      "entry_price": 1.9990700483322144,
-      "entry_time": "2026-11-09T08:15:00+00:00",
-      "msg_id": true
-    },
-    {
-      "id": "1cb73afb",
-      "symbol": "GBPNZD=X",
-      "type": "PUT",
-      "entry_price": 2.3968000411987305,
-      "entry_time": "2026-11-09T08:15:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1019,6 +1002,28 @@
       "exit_time": "2026-11-09T08:30:00+00:00",
       "win": false,
       "pips": 7.19
+    },
+    {
+      "id": "f7d08934",
+      "symbol": "EURNZD=X",
+      "type": "PUT",
+      "entry_price": 1.9990700483322144,
+      "exit_price": 1.9975700378417969,
+      "entry_time": "2026-11-09T08:15:00+00:00",
+      "exit_time": "2026-11-09T08:45:00+00:00",
+      "win": true,
+      "pips": 15.0
+    },
+    {
+      "id": "1cb73afb",
+      "symbol": "GBPNZD=X",
+      "type": "PUT",
+      "entry_price": 2.3968000411987305,
+      "exit_price": 2.3951799869537354,
+      "entry_time": "2026-11-09T08:15:00+00:00",
+      "exit_time": "2026-11-09T08:45:00+00:00",
+      "win": true,
+      "pips": 16.2
     }
   ],
   "daily_counter_date": "2026-11-09",
