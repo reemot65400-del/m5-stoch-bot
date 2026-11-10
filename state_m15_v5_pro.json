@@ -1,6 +1,7 @@
 {
   "frozen_pairs": {
-    "GBPCHF=X": "2026-11-10T07:15:00+00:00"
+    "USDCAD=X": "2026-11-10T07:30:00+00:00",
+    "GBPCHF=X": "2026-11-10T07:30:00+00:00"
   },
   "open_trades": [
     {
@@ -9,6 +10,22 @@
       "type": "CALL",
       "entry_price": 1.1005500555038452,
       "entry_time": "2026-11-10T06:45:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "2161fab5",
+      "symbol": "USDCAD=X",
+      "type": "CALL",
+      "entry_price": 1.4107999801635742,
+      "entry_time": "2026-11-10T07:00:00+00:00",
+      "msg_id": true
+    },
+    {
+      "id": "eb9d0267",
+      "symbol": "GBPCHF=X",
+      "type": "CALL",
+      "entry_price": 1.1002700328826904,
+      "entry_time": "2026-11-10T07:00:00+00:00",
       "msg_id": true
     }
   ],
@@ -1093,7 +1110,7 @@
     }
   ],
   "daily_counter_date": "2026-11-10",
-  "daily_signal_count": 1,
+  "daily_signal_count": 3,
   "last_daily_report": "2026-11-09",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
