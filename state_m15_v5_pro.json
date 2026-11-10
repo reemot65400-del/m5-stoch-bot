@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "097957ab",
-      "symbol": "NZDUSD=X",
-      "type": "CALL",
-      "entry_price": 0.5621135234832764,
-      "entry_time": "2026-11-10T13:30:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "8cc1f122",
       "symbol": "GBPNZD=X",
       "type": "PUT",
@@ -1142,6 +1134,17 @@
       "exit_time": "2026-11-10T09:30:00+00:00",
       "win": false,
       "pips": 1.26
+    },
+    {
+      "id": "097957ab",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.5621135234832764,
+      "exit_price": 0.5612932443618774,
+      "entry_time": "2026-11-10T13:30:00+00:00",
+      "exit_time": "2026-11-10T14:00:00+00:00",
+      "win": false,
+      "pips": 8.2
     }
   ],
   "daily_counter_date": "2026-11-10",
