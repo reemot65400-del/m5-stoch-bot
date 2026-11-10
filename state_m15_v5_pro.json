@@ -5,14 +5,6 @@
   },
   "open_trades": [
     {
-      "id": "0fe74293",
-      "symbol": "GBPCHF=X",
-      "type": "CALL",
-      "entry_price": 1.1005500555038452,
-      "entry_time": "2026-11-10T06:45:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "2161fab5",
       "symbol": "USDCAD=X",
       "type": "CALL",
@@ -1107,6 +1099,17 @@
       "exit_time": "2026-11-09T20:30:00+00:00",
       "win": true,
       "pips": 0.8
+    },
+    {
+      "id": "0fe74293",
+      "symbol": "GBPCHF=X",
+      "type": "CALL",
+      "entry_price": 1.1005500555038452,
+      "exit_price": 1.1002700328826904,
+      "entry_time": "2026-11-10T06:45:00+00:00",
+      "exit_time": "2026-11-10T07:15:00+00:00",
+      "win": false,
+      "pips": 2.8
     }
   ],
   "daily_counter_date": "2026-11-10",
