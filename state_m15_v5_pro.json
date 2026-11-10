@@ -1,6 +1,17 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "GBPUSD=X": "2026-11-10T09:30:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "5fc11384",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_price": 1.343418002128601,
+      "entry_time": "2026-11-10T09:00:00+00:00",
+      "msg_id": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1115,7 +1126,7 @@
     }
   ],
   "daily_counter_date": "2026-11-10",
-  "daily_signal_count": 3,
+  "daily_signal_count": 4,
   "last_daily_report": "2026-11-09",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
