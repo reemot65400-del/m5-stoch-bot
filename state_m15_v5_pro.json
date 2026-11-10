@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "f060dc1d",
-      "symbol": "GBPNZD=X",
-      "type": "PUT",
-      "entry_price": 2.3867299556732178,
-      "entry_time": "2026-11-10T14:00:00+00:00",
-      "msg_id": true
-    },
-    {
       "id": "d6b9d1fa",
       "symbol": "GBPCAD=X",
       "type": "CALL",
@@ -1164,6 +1156,17 @@
       "exit_time": "2026-11-10T14:15:00+00:00",
       "win": false,
       "pips": 7.7
+    },
+    {
+      "id": "f060dc1d",
+      "symbol": "GBPNZD=X",
+      "type": "PUT",
+      "entry_price": 2.3867299556732178,
+      "exit_price": 2.3869099617004395,
+      "entry_time": "2026-11-10T14:00:00+00:00",
+      "exit_time": "2026-11-10T14:30:00+00:00",
+      "win": false,
+      "pips": 1.8
     }
   ],
   "daily_counter_date": "2026-11-10",
