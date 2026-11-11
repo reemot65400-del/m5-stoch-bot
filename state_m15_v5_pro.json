@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "92f73c2d",
-      "symbol": "EURCAD=X",
-      "type": "CALL",
-      "entry_price": 1.583899974822998,
-      "entry_time": "2026-11-11T08:15:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1198,6 +1189,17 @@
       "exit_time": "2026-11-10T15:15:00+00:00",
       "win": true,
       "pips": 8.4
+    },
+    {
+      "id": "92f73c2d",
+      "symbol": "EURCAD=X",
+      "type": "CALL",
+      "entry_price": 1.583899974822998,
+      "exit_price": 1.5844199657440186,
+      "entry_time": "2026-11-11T08:15:00+00:00",
+      "exit_time": "2026-11-11T08:45:00+00:00",
+      "win": true,
+      "pips": 5.2
     }
   ],
   "daily_counter_date": "2026-11-11",
