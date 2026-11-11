@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-M15 Bollinger Trend Reversal Bot - v5.2 (Production Ready & Zero-Bug)
+M15 Bollinger Trend Reversal Bot - v5.3 (Production Ready & Zero-Bug)
 التعديلات الهندسية الحصرية:
 1. توحيد اسم ملف الحالة إلى "state_m15_v5_pro.json" لضمان التطابق التام مع الـ YAML.
 2. دمج آمن (Safe Auto-Merge) للملفات القديمة إن وُجدت دون أي مخاطر.
 3. الاحتفاظ الكامل بمنطق الاستراتيجية (M15 BB + EMA200)، فلاتر اللمس، وحسم الصفقات، والتقارير الثلاثية.
 4. عرض اسم الزوج بصيغة قابلة للنسخ (GBP/JPY) داخل رسائل تيليجرام فقط، دون تغيير الرموز الداخلية.
+الإصلاحات الجراحية الثلاثة في v5.3 (دون لمس الاستراتيجية):
+أ. فلتر حداثة الشمعة: 45 دقيقة بدل 30 — يمنع إهدار نبضات :46/:51/:56 وتأخر الحسم.
+ب. بوابة نهاية الأسبوع تعتمد توقيت غزة/الخليل بدل UTC — يمنع إشارات ليلة السبت ويوم الاثنين.
+ج. قاعدة DST الاحتياطية: حساب "آخر سبت" صحيح رياضياً لكل السنوات.
 """
 import os
 import sys
@@ -45,7 +49,8 @@ except Exception:
 def _is_palestine_summer(dt_utc: datetime) -> bool:
     def last_saturday(year, month):
         nxt = datetime(year + (month == 12), month % 12 + 1, 1, tzinfo=timezone.utc)
-        return nxt - timedelta(days=((nxt.weekday() - 5) % 7) + 1)
+        last_day = nxt - timedelta(days=1)
+        return last_day - timedelta(days=(last_day.weekday() - 5) % 7)
     return last_saturday(dt_utc.year, 3) <= dt_utc < last_saturday(dt_utc.year, 10)
 
 
@@ -76,8 +81,7 @@ def format_pair(symbol: str) -> str:
 # ═══════════════════════════════════════════════
 # 1. الإعدادات العامة
 # ═══════════════════════════════════════════════
-BOT_NAME = "M15_BB_Sniper_V5_2"
-# ★★ تصحيح الخطأ الأول: توحيد اسم ملف الحالة بدقة مطابقة للـ YAML ★★
+BOT_NAME = "M15_BB_Sniper_V5_3"
 STATE_FILE = "state_m15_v5_pro.json"
 LOG_LEVEL = logging.INFO
 
@@ -193,10 +197,15 @@ class StateManager:
                 try:
                     with open(legacy_path, 'r', encoding='utf-8') as f:
                         legacy_data = json.load(f)
-                    existing_ids = {t.get("id") for t in self.data["trade_history"] if t.get("id")}
+                    if not isinstance(legacy_data, dict):
+                        continue
+                    legacy_hist = legacy_data.get("trade_history", [])
+                    if not isinstance(legacy_hist, list):
+                        continue
+                    existing_ids = {t.get("id") for t in self.data["trade_history"] if isinstance(t, dict) and t.get("id")}
                     added_count = 0
-                    for trade in legacy_data.get("trade_history", []):
-                        if trade.get("id") and trade.get("id") not in existing_ids:
+                    for trade in legacy_hist:
+                        if isinstance(trade, dict) and trade.get("id") and trade.get("id") not in existing_ids:
                             self.data["trade_history"].append(trade)
                             existing_ids.add(trade.get("id"))
                             added_count += 1
@@ -243,7 +252,11 @@ class StateManager:
         if self.data.get("daily_counter_date") != today_str:
             self.data["daily_counter_date"] = today_str
             self.data["daily_signal_count"] = 0
-        self.data["daily_signal_count"] = int(self.data.get("daily_signal_count", 0)) + 1
+        try:
+            current_count = int(float(self.data.get("daily_signal_count", 0)))
+        except (TypeError, ValueError):
+            current_count = 0
+        self.data["daily_signal_count"] = current_count + 1
         self.save()
         return self.data["daily_signal_count"]
 
@@ -340,7 +353,8 @@ def analyze_market(symbol: str):
 
     candle_close_time = candle_time + pd.Timedelta(minutes=TRADE_DURATION_MINUTES)
     now_utc = pd.Timestamp.now(tz="UTC")
-    if (now_utc - candle_close_time) > pd.Timedelta(minutes=TRADE_DURATION_MINUTES * 2):
+    # ★ الإصلاح (أ): 45 دقيقة بدل 30 — يغطي كل النبضات (:01 حتى :56) دون إهدار أي دورة
+    if (now_utc - candle_close_time) > pd.Timedelta(minutes=TRADE_DURATION_MINUTES * 3):
         log.debug(f"Skipping {symbol}: Last closed candle ({candle_time}) is stale.")
         return None
 
@@ -752,8 +766,8 @@ def main():
     resolve_pending_trades(sm)
     generate_advanced_reports(sm)
 
-    now_utc = datetime.now(timezone.utc)
-    if now_utc.weekday() >= 5:
+    # ★ الإصلاح (ب): بوابة نهاية الأسبوع بتوقيت غزة/الخليل بدل UTC
+    if local_now.weekday() >= 5:
         log.info("Weekend. Skipping new signals.")
         return
 
@@ -812,7 +826,7 @@ def main():
                 "type": result['type'],
                 "entry_price": float(result['price']),
                 "entry_time": result['time'].isoformat(),
-                "msg_id": mid
+                "signal_sent": True
             })
             log.info(f"Signal Sent & Frozen: {sym} {result['type']} (#{signal_num})")
         else:
