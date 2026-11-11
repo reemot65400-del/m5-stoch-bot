@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "3584d120",
-      "symbol": "AUDCAD=X",
-      "type": "CALL",
-      "entry_price": 0.9757400155067444,
-      "entry_time": "2026-11-11T09:15:00+00:00",
-      "msg_id": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1209,6 +1200,17 @@
       "exit_time": "2026-11-11T08:45:00+00:00",
       "win": true,
       "pips": 5.2
+    },
+    {
+      "id": "3584d120",
+      "symbol": "AUDCAD=X",
+      "type": "CALL",
+      "entry_price": 0.9757400155067444,
+      "exit_price": 0.9759799838066101,
+      "entry_time": "2026-11-11T09:15:00+00:00",
+      "exit_time": "2026-11-11T09:45:00+00:00",
+      "win": true,
+      "pips": 2.4
     }
   ],
   "daily_counter_date": "2026-11-11",
