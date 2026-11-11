@@ -6,6 +6,7 @@ M15 Bollinger Trend Reversal Bot - v5.2 (Production Ready & Zero-Bug)
 1. توحيد اسم ملف الحالة إلى "state_m15_v5_pro.json" لضمان التطابق التام مع الـ YAML.
 2. دمج آمن (Safe Auto-Merge) للملفات القديمة إن وُجدت دون أي مخاطر.
 3. الاحتفاظ الكامل بمنطق الاستراتيجية (M15 BB + EMA200)، فلاتر اللمس، وحسم الصفقات، والتقارير الثلاثية.
+4. عرض اسم الزوج بصيغة قابلة للنسخ (GBP/JPY) داخل رسائل تيليجرام فقط، دون تغيير الرموز الداخلية.
 """
 import os
 import sys
@@ -59,6 +60,17 @@ def to_gaza(dt_obj: datetime) -> datetime:
 
 def get_palestine_now_safe() -> datetime:
     return to_gaza(datetime.now(timezone.utc))
+
+
+def format_pair(symbol: str) -> str:
+    """عرض الزوج بصيغة قابلة للنسخ مثل GBP/JPY — للعرض فقط دون المساس بالرمز الداخلي."""
+    try:
+        s = str(symbol).replace("=X", "").replace("/", "").strip().upper()
+        if len(s) == 6:
+            return f"{s[:3]}/{s[3:]}"
+        return s
+    except Exception:
+        return str(symbol)
 
 
 # ═══════════════════════════════════════════════
@@ -463,7 +475,7 @@ def resolve_pending_trades(sm: StateManager):
             exit_gaza_str = to_gaza(expected_exit_close_time).strftime('%H:%M')
 
             result_msg = (
-                f"{emoji} *| نتيجة M15: {sym}*\n\n"
+                f"{emoji} *| نتيجة M15:* `{format_pair(sym)}`\n\n"
                 f"📈 *الاتجاه:* `{dr}`\n"
                 f"⏰ *وقت الدخول:* `{actual_entry_close_time.strftime('%H:%M')} UTC` (`{entry_gaza_str}` غزة)\n"
                 f"🏁 *وقت الإغلاق:* `{expected_exit_close_time.strftime('%H:%M')} UTC` (`{exit_gaza_str}` غزة)\n"
@@ -583,13 +595,13 @@ def build_report_message(trades_list: list, report_type: str, period_name: str) 
         best_sym, best_info = sorted_pairs[0]
         b_valid = best_info["wins"] + best_info["losses"]
         b_wr = (best_info["wins"] / b_valid * 100.0) if b_valid > 0 else 0.0
-        best_pair_txt = f"🥇 `{best_sym}` ({best_info['net_pips']:+.1f} Pips | فوز: {b_wr:.0f}%)"
+        best_pair_txt = f"🥇 `{format_pair(best_sym)}` ({best_info['net_pips']:+.1f} Pips | فوز: {b_wr:.0f}%)"
 
         if len(sorted_pairs) > 1:
             worst_sym, worst_info = sorted_pairs[-1]
             w_valid = worst_info["wins"] + worst_info["losses"]
             w_wr = (worst_info["wins"] / w_valid * 100.0) if w_valid > 0 else 0.0
-            worst_pair_txt = f"⚠️ `{worst_sym}` ({worst_info['net_pips']:+.1f} Pips | فوز: {w_wr:.0f}%)"
+            worst_pair_txt = f"⚠️ `{format_pair(worst_sym)}` ({worst_info['net_pips']:+.1f} Pips | فوز: {w_wr:.0f}%)"
         else:
             worst_pair_txt = "لا يوجد (تم التداول على زوج واحد فقط)"
 
@@ -778,7 +790,7 @@ def main():
 
         msg = (
             f"*🎯 إشارة M15 BOLLINGER TREND REVERSAL #{signal_num}*\n\n"
-            f"📊 *الزوج:* `{result['symbol']}`\n"
+            f"📊 *الزوج:* `{format_pair(result['symbol'])}`\n"
             f"📈 *الاتجاه:* {arrow}\n"
             f"💰 *السعر الحالي:* `{result['price']:.5f}`\n\n"
             f"🎯 *منطقة الدخول:* اختراق البولنجر باندز ({result['distance_pips']:.1f} نقطة)\n"
