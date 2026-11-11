@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "AUDCAD=X": "2026-11-11T09:45:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "3584d120",
