@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "5ef84e37",
-      "symbol": "CHFJPY=X",
-      "type": "PUT",
-      "entry_price": 192.05999755859375,
-      "entry_time": "2026-11-11T15:30:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1231,6 +1222,17 @@
       "exit_time": "2026-11-11T11:30:00+00:00",
       "win": true,
       "pips": 2.8
+    },
+    {
+      "id": "5ef84e37",
+      "symbol": "CHFJPY=X",
+      "type": "PUT",
+      "entry_price": 192.05999755859375,
+      "exit_price": 192.01600646972656,
+      "entry_time": "2026-11-11T15:30:00+00:00",
+      "exit_time": "2026-11-11T16:00:00+00:00",
+      "win": true,
+      "pips": 4.4
     }
   ],
   "daily_counter_date": "2026-11-11",
