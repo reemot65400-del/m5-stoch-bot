@@ -1,6 +1,6 @@
 {
   "frozen_pairs": {
-    "USDCAD=X": "2026-11-12T13:45:00+00:00"
+    "USDCAD=X": "2026-11-12T14:00:00+00:00"
   },
   "open_trades": [
     {
@@ -9,6 +9,14 @@
       "type": "CALL",
       "entry_price": 1.4233299493789673,
       "entry_time": "2026-11-12T13:15:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "7e8acd02",
+      "symbol": "USDCAD=X",
+      "type": "CALL",
+      "entry_price": 1.4229099750518799,
+      "entry_time": "2026-11-12T13:30:00+00:00",
       "signal_sent": true
     }
   ],
@@ -1269,7 +1277,7 @@
     }
   ],
   "daily_counter_date": "2026-11-12",
-  "daily_signal_count": 3,
+  "daily_signal_count": 4,
   "last_daily_report": "2026-11-11",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
