@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "008f8135",
-      "symbol": "USDCAD=X",
-      "type": "CALL",
-      "entry_price": 1.4233299493789673,
-      "entry_time": "2026-11-12T13:15:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "7e8acd02",
       "symbol": "USDCAD=X",
       "type": "CALL",
@@ -1274,6 +1266,17 @@
       "exit_time": "2026-11-12T11:00:00+00:00",
       "win": true,
       "pips": 4.5
+    },
+    {
+      "id": "008f8135",
+      "symbol": "USDCAD=X",
+      "type": "CALL",
+      "entry_price": 1.4233299493789673,
+      "exit_price": 1.4229099750518799,
+      "entry_time": "2026-11-12T13:15:00+00:00",
+      "exit_time": "2026-11-12T13:45:00+00:00",
+      "win": false,
+      "pips": 4.2
     }
   ],
   "daily_counter_date": "2026-11-12",
