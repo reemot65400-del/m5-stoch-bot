@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "USDCAD=X": "2026-11-12T10:30:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "81a816e6",
