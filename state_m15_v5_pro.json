@@ -1,6 +1,6 @@
 {
   "frozen_pairs": {
-    "USDCHF=X": "2026-11-13T15:00:00+00:00"
+    "USDCHF=X": "2026-11-13T15:15:00+00:00"
   },
   "open_trades": [
     {
@@ -9,6 +9,14 @@
       "type": "CALL",
       "entry_price": 0.8369399905204773,
       "entry_time": "2026-11-13T14:30:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "79e4a4eb",
+      "symbol": "USDCHF=X",
+      "type": "CALL",
+      "entry_price": 0.8365200161933899,
+      "entry_time": "2026-11-13T14:45:00+00:00",
       "signal_sent": true
     }
   ],
@@ -1313,7 +1321,7 @@
     }
   ],
   "daily_counter_date": "2026-11-13",
-  "daily_signal_count": 3,
+  "daily_signal_count": 4,
   "last_daily_report": "2026-11-12",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
