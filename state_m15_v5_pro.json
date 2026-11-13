@@ -1,39 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "34bd8dd5",
-      "symbol": "USDJPY=X",
-      "type": "CALL",
-      "entry_price": 159.73800659179688,
-      "entry_time": "2026-11-13T15:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "7024804e",
-      "symbol": "USDCHF=X",
-      "type": "CALL",
-      "entry_price": 0.8360400199890137,
-      "entry_time": "2026-11-13T15:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "6878a592",
-      "symbol": "EURCHF=X",
-      "type": "CALL",
-      "entry_price": 0.9242799878120422,
-      "entry_time": "2026-11-13T15:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "fa73c6ac",
-      "symbol": "GBPCHF=X",
-      "type": "CALL",
-      "entry_price": 1.1071499586105347,
-      "entry_time": "2026-11-13T15:00:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1354,6 +1321,50 @@
       "exit_time": "2026-11-13T15:15:00+00:00",
       "win": false,
       "pips": 4.8
+    },
+    {
+      "id": "34bd8dd5",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_price": 159.73800659179688,
+      "exit_price": 159.86099243164062,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "exit_time": "2026-11-13T15:30:00+00:00",
+      "win": true,
+      "pips": 12.3
+    },
+    {
+      "id": "7024804e",
+      "symbol": "USDCHF=X",
+      "type": "CALL",
+      "entry_price": 0.8360400199890137,
+      "exit_price": 0.8376200199127197,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "exit_time": "2026-11-13T15:30:00+00:00",
+      "win": true,
+      "pips": 15.8
+    },
+    {
+      "id": "6878a592",
+      "symbol": "EURCHF=X",
+      "type": "CALL",
+      "entry_price": 0.9242799878120422,
+      "exit_price": 0.9243199825286865,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "exit_time": "2026-11-13T15:30:00+00:00",
+      "win": true,
+      "pips": 0.4
+    },
+    {
+      "id": "fa73c6ac",
+      "symbol": "GBPCHF=X",
+      "type": "CALL",
+      "entry_price": 1.1071499586105347,
+      "exit_price": 1.1078300476074219,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "exit_time": "2026-11-13T15:30:00+00:00",
+      "win": true,
+      "pips": 6.8
     }
   ],
   "daily_counter_date": "2026-11-13",
