@@ -1,6 +1,9 @@
 {
   "frozen_pairs": {
-    "USDCHF=X": "2026-11-13T15:15:00+00:00"
+    "USDJPY=X": "2026-11-13T15:30:00+00:00",
+    "USDCHF=X": "2026-11-13T15:30:00+00:00",
+    "EURCHF=X": "2026-11-13T15:30:00+00:00",
+    "GBPCHF=X": "2026-11-13T15:30:00+00:00"
   },
   "open_trades": [
     {
@@ -9,6 +12,38 @@
       "type": "CALL",
       "entry_price": 0.8365200161933899,
       "entry_time": "2026-11-13T14:45:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "34bd8dd5",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_price": 159.73800659179688,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "7024804e",
+      "symbol": "USDCHF=X",
+      "type": "CALL",
+      "entry_price": 0.8360400199890137,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "6878a592",
+      "symbol": "EURCHF=X",
+      "type": "CALL",
+      "entry_price": 0.9242799878120422,
+      "entry_time": "2026-11-13T15:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "fa73c6ac",
+      "symbol": "GBPCHF=X",
+      "type": "CALL",
+      "entry_price": 1.1071499586105347,
+      "entry_time": "2026-11-13T15:00:00+00:00",
       "signal_sent": true
     }
   ],
@@ -1324,7 +1359,7 @@
     }
   ],
   "daily_counter_date": "2026-11-13",
-  "daily_signal_count": 4,
+  "daily_signal_count": 8,
   "last_daily_report": "2026-11-12",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
