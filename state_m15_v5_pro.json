@@ -1,23 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "d77824ba",
-      "symbol": "EURUSD=X",
-      "type": "PUT",
-      "entry_price": 1.107051968574524,
-      "entry_time": "2026-11-13T06:45:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "33d9c510",
-      "symbol": "EURCAD=X",
-      "type": "PUT",
-      "entry_price": 1.5776900053024292,
-      "entry_time": "2026-11-13T06:45:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1294,6 +1277,28 @@
       "exit_time": "2026-11-12T14:00:00+00:00",
       "win": true,
       "pips": 7.6
+    },
+    {
+      "id": "d77824ba",
+      "symbol": "EURUSD=X",
+      "type": "PUT",
+      "entry_price": 1.107051968574524,
+      "exit_price": 1.1069294214248657,
+      "entry_time": "2026-11-13T06:45:00+00:00",
+      "exit_time": "2026-11-13T07:15:00+00:00",
+      "win": true,
+      "pips": 1.23
+    },
+    {
+      "id": "33d9c510",
+      "symbol": "EURCAD=X",
+      "type": "PUT",
+      "entry_price": 1.5776900053024292,
+      "exit_price": 1.5776000022888184,
+      "entry_time": "2026-11-13T06:45:00+00:00",
+      "exit_time": "2026-11-13T07:15:00+00:00",
+      "win": true,
+      "pips": 0.9
     }
   ],
   "daily_counter_date": "2026-11-13",
