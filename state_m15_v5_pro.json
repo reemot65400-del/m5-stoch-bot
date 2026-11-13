@@ -1,8 +1,5 @@
 {
-  "frozen_pairs": {
-    "EURUSD=X": "2026-11-13T07:15:00+00:00",
-    "EURCAD=X": "2026-11-13T07:15:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "d77824ba",
