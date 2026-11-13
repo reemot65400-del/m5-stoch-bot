@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "70fc350f",
-      "symbol": "USDCHF=X",
-      "type": "CALL",
-      "entry_price": 0.8369399905204773,
-      "entry_time": "2026-11-13T14:30:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "79e4a4eb",
       "symbol": "USDCHF=X",
       "type": "CALL",
@@ -1318,6 +1310,17 @@
       "exit_time": "2026-11-13T07:15:00+00:00",
       "win": true,
       "pips": 0.9
+    },
+    {
+      "id": "70fc350f",
+      "symbol": "USDCHF=X",
+      "type": "CALL",
+      "entry_price": 0.8369399905204773,
+      "exit_price": 0.8365200161933899,
+      "entry_time": "2026-11-13T14:30:00+00:00",
+      "exit_time": "2026-11-13T15:00:00+00:00",
+      "win": false,
+      "pips": 4.2
     }
   ],
   "daily_counter_date": "2026-11-13",
