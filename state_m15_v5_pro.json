@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "GBPCHF=X": "2026-11-16T12:45:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "3013143a",
