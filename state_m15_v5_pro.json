@@ -1,6 +1,17 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "EURCAD=X": "2026-11-16T14:00:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "f2ea642b",
+      "symbol": "EURCAD=X",
+      "type": "PUT",
+      "entry_price": 1.5745999813079834,
+      "entry_time": "2026-11-16T13:30:00+00:00",
+      "signal_sent": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1412,7 +1423,7 @@
     }
   ],
   "daily_counter_date": "2026-11-16",
-  "daily_signal_count": 3,
+  "daily_signal_count": 4,
   "last_daily_report": "2026-11-15",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
