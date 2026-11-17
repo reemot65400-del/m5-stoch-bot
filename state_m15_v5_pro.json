@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "517448a3",
-      "symbol": "USDCAD=X",
-      "type": "CALL",
-      "entry_price": 1.4286999702453613,
-      "entry_time": "2026-11-17T08:30:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1429,6 +1420,17 @@
       "exit_time": "2026-11-16T14:00:00+00:00",
       "win": true,
       "pips": 2.8
+    },
+    {
+      "id": "517448a3",
+      "symbol": "USDCAD=X",
+      "type": "CALL",
+      "entry_price": 1.4286999702453613,
+      "exit_price": 1.429460048675537,
+      "entry_time": "2026-11-17T08:30:00+00:00",
+      "exit_time": "2026-11-17T09:00:00+00:00",
+      "win": true,
+      "pips": 7.6
     }
   ],
   "daily_counter_date": "2026-11-17",
