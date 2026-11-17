@@ -4,14 +4,6 @@
   },
   "open_trades": [
     {
-      "id": "05f1a2ad",
-      "symbol": "CHFJPY=X",
-      "type": "PUT",
-      "entry_price": 189.72999572753906,
-      "entry_time": "2026-11-17T15:30:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "956d6102",
       "symbol": "CHFJPY=X",
       "type": "PUT",
@@ -1450,6 +1442,17 @@
       "exit_time": "2026-11-17T09:00:00+00:00",
       "win": true,
       "pips": 7.6
+    },
+    {
+      "id": "05f1a2ad",
+      "symbol": "CHFJPY=X",
+      "type": "PUT",
+      "entry_price": 189.72999572753906,
+      "exit_price": 189.80999755859375,
+      "entry_time": "2026-11-17T15:30:00+00:00",
+      "exit_time": "2026-11-17T16:00:00+00:00",
+      "win": false,
+      "pips": 8.0
     }
   ],
   "daily_counter_date": "2026-11-17",
