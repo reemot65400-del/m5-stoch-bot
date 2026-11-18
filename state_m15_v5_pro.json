@@ -1,8 +1,6 @@
 {
   "frozen_pairs": {
-    "EURNZD=X": "2026-11-18T15:30:00+00:00",
-    "GBPCAD=X": "2026-11-18T15:30:00+00:00",
-    "GBPNZD=X": "2026-11-18T15:30:00+00:00"
+    "GBPNZD=X": "2026-11-18T15:45:00+00:00"
   },
   "open_trades": [
     {
@@ -27,6 +25,14 @@
       "type": "PUT",
       "entry_price": 2.397469997406006,
       "entry_time": "2026-11-18T15:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "50268bcc",
+      "symbol": "GBPNZD=X",
+      "type": "PUT",
+      "entry_price": 2.3979599475860596,
+      "entry_time": "2026-11-18T15:15:00+00:00",
       "signal_sent": true
     }
   ],
@@ -1584,7 +1590,7 @@
     }
   ],
   "daily_counter_date": "2026-11-18",
-  "daily_signal_count": 10,
+  "daily_signal_count": 11,
   "last_daily_report": "2026-11-17",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
