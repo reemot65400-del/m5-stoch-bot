@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "f6d4faf7",
-      "symbol": "GBPNZD=X",
-      "type": "CALL",
-      "entry_price": 2.3993399143218994,
-      "entry_time": "2026-11-18T07:30:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1517,6 +1508,17 @@
       "exit_time": "2026-11-18T07:30:00+00:00",
       "win": false,
       "pips": 1.3
+    },
+    {
+      "id": "f6d4faf7",
+      "symbol": "GBPNZD=X",
+      "type": "CALL",
+      "entry_price": 2.3993399143218994,
+      "exit_price": 2.398390054702759,
+      "entry_time": "2026-11-18T07:30:00+00:00",
+      "exit_time": "2026-11-18T08:00:00+00:00",
+      "win": false,
+      "pips": 9.5
     }
   ],
   "daily_counter_date": "2026-11-18",
