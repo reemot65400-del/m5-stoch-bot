@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "AUDNZD=X": "2026-11-18T09:15:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "f27aea6d",
