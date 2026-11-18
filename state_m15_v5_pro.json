@@ -1,6 +1,26 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "EURCAD=X": "2026-11-18T15:00:00+00:00",
+    "EURNZD=X": "2026-11-18T15:00:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "1f49f698",
+      "symbol": "EURCAD=X",
+      "type": "PUT",
+      "entry_price": 1.5713599920272827,
+      "entry_time": "2026-11-18T14:30:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "dfd38559",
+      "symbol": "EURNZD=X",
+      "type": "PUT",
+      "entry_price": 1.997380018234253,
+      "entry_time": "2026-11-18T14:30:00+00:00",
+      "signal_sent": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1533,7 +1553,7 @@
     }
   ],
   "daily_counter_date": "2026-11-18",
-  "daily_signal_count": 5,
+  "daily_signal_count": 7,
   "last_daily_report": "2026-11-17",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
