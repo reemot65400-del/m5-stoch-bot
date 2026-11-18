@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "GBPNZD=X": "2026-11-18T15:45:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "50268bcc",
