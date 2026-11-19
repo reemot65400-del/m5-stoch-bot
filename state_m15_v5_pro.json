@@ -5,22 +5,6 @@
   },
   "open_trades": [
     {
-      "id": "cb2d8afa",
-      "symbol": "NZDUSD=X",
-      "type": "CALL",
-      "entry_price": 0.5522421002388,
-      "entry_time": "2026-11-19T14:30:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "ad0ed2e3",
-      "symbol": "CHFJPY=X",
-      "type": "CALL",
-      "entry_price": 189.66700744628906,
-      "entry_time": "2026-11-19T14:30:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "2f5bed86",
       "symbol": "NZDUSD=X",
       "type": "CALL",
@@ -1709,6 +1693,28 @@
       "exit_time": "2026-11-19T14:30:00+00:00",
       "win": true,
       "pips": 4.4
+    },
+    {
+      "id": "cb2d8afa",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.5522421002388,
+      "exit_price": 0.5517545938491821,
+      "entry_time": "2026-11-19T14:30:00+00:00",
+      "exit_time": "2026-11-19T15:00:00+00:00",
+      "win": false,
+      "pips": 4.88
+    },
+    {
+      "id": "ad0ed2e3",
+      "symbol": "CHFJPY=X",
+      "type": "CALL",
+      "entry_price": 189.66700744628906,
+      "exit_price": 189.58999633789062,
+      "entry_time": "2026-11-19T14:30:00+00:00",
+      "exit_time": "2026-11-19T15:00:00+00:00",
+      "win": false,
+      "pips": 7.7
     }
   ],
   "daily_counter_date": "2026-11-19",
