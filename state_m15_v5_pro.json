@@ -5,14 +5,6 @@
   },
   "open_trades": [
     {
-      "id": "481e2c97",
-      "symbol": "CHFJPY=X",
-      "type": "PUT",
-      "entry_price": 189.26300048828125,
-      "entry_time": "2026-11-19T07:00:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "b2f44d18",
       "symbol": "GBPUSD=X",
       "type": "PUT",
@@ -1624,6 +1616,17 @@
       "exit_time": "2026-11-18T15:45:00+00:00",
       "win": true,
       "pips": 21.4
+    },
+    {
+      "id": "481e2c97",
+      "symbol": "CHFJPY=X",
+      "type": "PUT",
+      "entry_price": 189.26300048828125,
+      "exit_price": 189.35800170898438,
+      "entry_time": "2026-11-19T07:00:00+00:00",
+      "exit_time": "2026-11-19T07:30:00+00:00",
+      "win": false,
+      "pips": 9.5
     }
   ],
   "daily_counter_date": "2026-11-19",
