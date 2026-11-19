@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "203820f2",
-      "symbol": "AUDNZD=X",
-      "type": "PUT",
-      "entry_price": 1.2152700424194336,
-      "entry_time": "2026-11-19T14:00:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1671,6 +1662,17 @@
       "exit_time": "2026-11-19T12:45:00+00:00",
       "win": true,
       "pips": 5.4
+    },
+    {
+      "id": "203820f2",
+      "symbol": "AUDNZD=X",
+      "type": "PUT",
+      "entry_price": 1.2152700424194336,
+      "exit_price": 1.2148300409317017,
+      "entry_time": "2026-11-19T14:00:00+00:00",
+      "exit_time": "2026-11-19T14:30:00+00:00",
+      "win": true,
+      "pips": 4.4
     }
   ],
   "daily_counter_date": "2026-11-19",
