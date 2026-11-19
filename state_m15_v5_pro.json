@@ -1,23 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "d3c3b556",
-      "symbol": "USDJPY=X",
-      "type": "CALL",
-      "entry_price": 159.72500610351562,
-      "entry_time": "2026-11-19T15:30:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "53e8473c",
-      "symbol": "CADJPY=X",
-      "type": "CALL",
-      "entry_price": 111.5770034790039,
-      "entry_time": "2026-11-19T15:30:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1767,6 +1750,28 @@
       "exit_time": "2026-11-19T15:45:00+00:00",
       "win": false,
       "pips": 7.0
+    },
+    {
+      "id": "d3c3b556",
+      "symbol": "USDJPY=X",
+      "type": "CALL",
+      "entry_price": 159.72500610351562,
+      "exit_price": 159.81300354003906,
+      "entry_time": "2026-11-19T15:30:00+00:00",
+      "exit_time": "2026-11-19T16:00:00+00:00",
+      "win": true,
+      "pips": 8.8
+    },
+    {
+      "id": "53e8473c",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_price": 111.5770034790039,
+      "exit_price": 111.66899871826172,
+      "entry_time": "2026-11-19T15:30:00+00:00",
+      "exit_time": "2026-11-19T16:00:00+00:00",
+      "win": true,
+      "pips": 9.2
     }
   ],
   "daily_counter_date": "2026-11-19",
