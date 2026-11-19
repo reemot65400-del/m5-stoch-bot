@@ -1,8 +1,5 @@
 {
-  "frozen_pairs": {
-    "USDJPY=X": "2026-11-19T16:00:00+00:00",
-    "CADJPY=X": "2026-11-19T16:00:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "d3c3b556",
