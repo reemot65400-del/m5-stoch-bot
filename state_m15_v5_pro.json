@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "5b287817",
-      "symbol": "EURAUD=X",
-      "type": "CALL",
-      "entry_price": 1.6367000341415405,
-      "entry_time": "2026-11-19T12:15:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1660,6 +1651,17 @@
       "exit_time": "2026-11-19T09:30:00+00:00",
       "win": true,
       "pips": 0.9
+    },
+    {
+      "id": "5b287817",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_price": 1.6367000341415405,
+      "exit_price": 1.6372400522232056,
+      "entry_time": "2026-11-19T12:15:00+00:00",
+      "exit_time": "2026-11-19T12:45:00+00:00",
+      "win": true,
+      "pips": 5.4
     }
   ],
   "daily_counter_date": "2026-11-19",
