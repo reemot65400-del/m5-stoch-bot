@@ -1,7 +1,7 @@
 {
   "frozen_pairs": {
-    "NZDUSD=X": "2026-11-19T15:15:00+00:00",
-    "CHFJPY=X": "2026-11-19T15:15:00+00:00"
+    "NZDUSD=X": "2026-11-19T15:30:00+00:00",
+    "CHFJPY=X": "2026-11-19T15:30:00+00:00"
   },
   "open_trades": [
     {
@@ -18,6 +18,22 @@
       "type": "CALL",
       "entry_price": 189.58999633789062,
       "entry_time": "2026-11-19T14:45:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "42ecaf1a",
+      "symbol": "NZDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.5514199137687683,
+      "entry_time": "2026-11-19T15:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "a94e9001",
+      "symbol": "CHFJPY=X",
+      "type": "CALL",
+      "entry_price": 189.5019989013672,
+      "entry_time": "2026-11-19T15:00:00+00:00",
       "signal_sent": true
     }
   ],
@@ -1718,7 +1734,7 @@
     }
   ],
   "daily_counter_date": "2026-11-19",
-  "daily_signal_count": 11,
+  "daily_signal_count": 13,
   "last_daily_report": "2026-11-18",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
