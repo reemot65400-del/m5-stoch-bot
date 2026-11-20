@@ -1,31 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "938c09ca",
-      "symbol": "EURGBP=X",
-      "type": "CALL",
-      "entry_price": 0.8372099995613098,
-      "entry_time": "2026-11-20T07:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "c8ec7bac",
-      "symbol": "GBPCAD=X",
-      "type": "PUT",
-      "entry_price": 1.878980040550232,
-      "entry_time": "2026-11-20T07:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "d8881af9",
-      "symbol": "GBPCHF=X",
-      "type": "PUT",
-      "entry_price": 1.1051299571990967,
-      "entry_time": "2026-11-20T07:00:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1797,6 +1772,39 @@
       "exit_time": "2026-11-19T16:00:00+00:00",
       "win": true,
       "pips": 9.2
+    },
+    {
+      "id": "938c09ca",
+      "symbol": "EURGBP=X",
+      "type": "CALL",
+      "entry_price": 0.8372099995613098,
+      "exit_price": 0.8376299738883972,
+      "entry_time": "2026-11-20T07:00:00+00:00",
+      "exit_time": "2026-11-20T07:30:00+00:00",
+      "win": true,
+      "pips": 4.2
+    },
+    {
+      "id": "c8ec7bac",
+      "symbol": "GBPCAD=X",
+      "type": "PUT",
+      "entry_price": 1.878980040550232,
+      "exit_price": 1.8779499530792236,
+      "entry_time": "2026-11-20T07:00:00+00:00",
+      "exit_time": "2026-11-20T07:30:00+00:00",
+      "win": true,
+      "pips": 10.3
+    },
+    {
+      "id": "d8881af9",
+      "symbol": "GBPCHF=X",
+      "type": "PUT",
+      "entry_price": 1.1051299571990967,
+      "exit_price": 1.1041799783706665,
+      "entry_time": "2026-11-20T07:00:00+00:00",
+      "exit_time": "2026-11-20T07:30:00+00:00",
+      "win": true,
+      "pips": 9.5
     }
   ],
   "daily_counter_date": "2026-11-20",
