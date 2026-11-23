@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "1088e689",
-      "symbol": "USDJPY=X",
-      "type": "PUT",
-      "entry_price": 159.08200073242188,
-      "entry_time": "2026-11-23T08:00:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1836,6 +1827,17 @@
       "exit_time": "2026-11-23T07:45:00+00:00",
       "win": true,
       "pips": 2.1
+    },
+    {
+      "id": "1088e689",
+      "symbol": "USDJPY=X",
+      "type": "PUT",
+      "entry_price": 159.08200073242188,
+      "exit_price": 159.05799865722656,
+      "entry_time": "2026-11-23T08:00:00+00:00",
+      "exit_time": "2026-11-23T08:30:00+00:00",
+      "win": true,
+      "pips": 2.4
     }
   ],
   "daily_counter_date": "2026-11-23",
