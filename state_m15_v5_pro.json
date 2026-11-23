@@ -7,14 +7,6 @@
   },
   "open_trades": [
     {
-      "id": "8bfd0bce",
-      "symbol": "EURAUD=X",
-      "type": "CALL",
-      "entry_price": 1.6522200107574463,
-      "entry_time": "2026-11-23T08:45:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "79dcdbf3",
       "symbol": "EURUSD=X",
       "type": "CALL",
@@ -1884,6 +1876,17 @@
       "exit_time": "2026-11-23T08:30:00+00:00",
       "win": true,
       "pips": 2.4
+    },
+    {
+      "id": "8bfd0bce",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_price": 1.6522200107574463,
+      "exit_price": 1.6502000093460083,
+      "entry_time": "2026-11-23T08:45:00+00:00",
+      "exit_time": "2026-11-23T09:15:00+00:00",
+      "win": false,
+      "pips": 20.2
     }
   ],
   "daily_counter_date": "2026-11-23",
