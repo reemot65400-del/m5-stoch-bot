@@ -1,39 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "79dcdbf3",
-      "symbol": "EURUSD=X",
-      "type": "CALL",
-      "entry_price": 1.0984183549880981,
-      "entry_time": "2026-11-23T09:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "75d88a05",
-      "symbol": "EURAUD=X",
-      "type": "CALL",
-      "entry_price": 1.6502000093460083,
-      "entry_time": "2026-11-23T09:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "ea9211e1",
-      "symbol": "GBPAUD=X",
-      "type": "CALL",
-      "entry_price": 1.9723700284957886,
-      "entry_time": "2026-11-23T09:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "4702d4f5",
-      "symbol": "AUDCAD=X",
-      "type": "PUT",
-      "entry_price": 0.9529799818992615,
-      "entry_time": "2026-11-23T09:00:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1882,6 +1849,50 @@
       "exit_time": "2026-11-23T09:15:00+00:00",
       "win": false,
       "pips": 20.2
+    },
+    {
+      "id": "79dcdbf3",
+      "symbol": "EURUSD=X",
+      "type": "CALL",
+      "entry_price": 1.0984183549880981,
+      "exit_price": 1.098659634590149,
+      "entry_time": "2026-11-23T09:00:00+00:00",
+      "exit_time": "2026-11-23T09:30:00+00:00",
+      "win": true,
+      "pips": 2.41
+    },
+    {
+      "id": "75d88a05",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_price": 1.6502000093460083,
+      "exit_price": 1.6500699520111084,
+      "entry_time": "2026-11-23T09:00:00+00:00",
+      "exit_time": "2026-11-23T09:30:00+00:00",
+      "win": false,
+      "pips": 1.3
+    },
+    {
+      "id": "ea9211e1",
+      "symbol": "GBPAUD=X",
+      "type": "CALL",
+      "entry_price": 1.9723700284957886,
+      "exit_price": 1.9718799591064453,
+      "entry_time": "2026-11-23T09:00:00+00:00",
+      "exit_time": "2026-11-23T09:30:00+00:00",
+      "win": false,
+      "pips": 4.9
+    },
+    {
+      "id": "4702d4f5",
+      "symbol": "AUDCAD=X",
+      "type": "PUT",
+      "entry_price": 0.9529799818992615,
+      "exit_price": 0.9528899788856506,
+      "entry_time": "2026-11-23T09:00:00+00:00",
+      "exit_time": "2026-11-23T09:30:00+00:00",
+      "win": true,
+      "pips": 0.9
     }
   ],
   "daily_counter_date": "2026-11-23",
