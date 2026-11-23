@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "CADCHF=X": "2026-11-23T14:15:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "86ac864b",
