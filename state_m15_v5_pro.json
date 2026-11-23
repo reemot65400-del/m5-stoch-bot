@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "USDJPY=X": "2026-11-23T08:30:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "1088e689",
