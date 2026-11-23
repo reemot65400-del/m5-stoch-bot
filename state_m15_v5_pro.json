@@ -1,23 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "64d52e93",
-      "symbol": "USDCHF=X",
-      "type": "PUT",
-      "entry_price": 0.839959979057312,
-      "entry_time": "2026-11-23T13:00:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "0c91f45c",
-      "symbol": "CHFJPY=X",
-      "type": "CALL",
-      "entry_price": 189.36700439453125,
-      "entry_time": "2026-11-23T13:00:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1910,6 +1893,28 @@
       "exit_time": "2026-11-23T09:30:00+00:00",
       "win": true,
       "pips": 0.9
+    },
+    {
+      "id": "64d52e93",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_price": 0.839959979057312,
+      "exit_price": 0.8397499918937683,
+      "entry_time": "2026-11-23T13:00:00+00:00",
+      "exit_time": "2026-11-23T13:30:00+00:00",
+      "win": true,
+      "pips": 2.1
+    },
+    {
+      "id": "0c91f45c",
+      "symbol": "CHFJPY=X",
+      "type": "CALL",
+      "entry_price": 189.36700439453125,
+      "exit_price": 189.3699951171875,
+      "entry_time": "2026-11-23T13:00:00+00:00",
+      "exit_time": "2026-11-23T13:30:00+00:00",
+      "win": true,
+      "pips": 0.3
     }
   ],
   "daily_counter_date": "2026-11-23",
