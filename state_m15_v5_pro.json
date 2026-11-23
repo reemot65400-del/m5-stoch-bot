@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "AUDUSD=X": "2026-11-23T14:45:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "33bd2823",
