@@ -1,6 +1,17 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "EURCHF=X": "2026-11-24T08:45:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "42e63b0f",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9192100167274475,
+      "entry_time": "2026-11-24T08:15:00+00:00",
+      "signal_sent": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1950,8 +1961,8 @@
       "pips": 4.25
     }
   ],
-  "daily_counter_date": "2026-11-23",
-  "daily_signal_count": 12,
+  "daily_counter_date": "2026-11-24",
+  "daily_signal_count": 1,
   "last_daily_report": "2026-11-23",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
