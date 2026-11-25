@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "40bb8551",
-      "symbol": "CADCHF=X",
-      "type": "PUT",
-      "entry_price": 0.5840700268745422,
-      "entry_time": "2026-11-25T14:45:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2056,6 +2047,17 @@
       "exit_time": "2026-11-25T13:45:00+00:00",
       "win": true,
       "pips": 2.8
+    },
+    {
+      "id": "40bb8551",
+      "symbol": "CADCHF=X",
+      "type": "PUT",
+      "entry_price": 0.5840700268745422,
+      "exit_price": 0.583869993686676,
+      "entry_time": "2026-11-25T14:45:00+00:00",
+      "exit_time": "2026-11-25T15:15:00+00:00",
+      "win": true,
+      "pips": 2.0
     }
   ],
   "daily_counter_date": "2026-11-25",
