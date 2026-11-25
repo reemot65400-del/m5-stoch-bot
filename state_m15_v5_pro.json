@@ -1,6 +1,17 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "CADJPY=X": "2026-11-25T07:45:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "cf9860ce",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_price": 111.35099792480469,
+      "entry_time": "2026-11-25T07:15:00+00:00",
+      "signal_sent": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -1994,8 +2005,8 @@
       "pips": 0.44
     }
   ],
-  "daily_counter_date": "2026-11-24",
-  "daily_signal_count": 4,
+  "daily_counter_date": "2026-11-25",
+  "daily_signal_count": 1,
   "last_daily_report": "2026-11-24",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
