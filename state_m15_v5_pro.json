@@ -1,7 +1,6 @@
 {
   "frozen_pairs": {
-    "AUDUSD=X": "2026-11-25T17:30:00+00:00",
-    "AUDCAD=X": "2026-11-25T17:30:00+00:00"
+    "AUDCAD=X": "2026-11-25T17:45:00+00:00"
   },
   "open_trades": [
     {
@@ -18,6 +17,14 @@
       "type": "PUT",
       "entry_price": 0.9388099908828735,
       "entry_time": "2026-11-25T17:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "b3ff0960",
+      "symbol": "AUDCAD=X",
+      "type": "PUT",
+      "entry_price": 0.9392499923706055,
+      "entry_time": "2026-11-25T17:15:00+00:00",
       "signal_sent": true
     }
   ],
@@ -2092,7 +2099,7 @@
     }
   ],
   "daily_counter_date": "2026-11-25",
-  "daily_signal_count": 9,
+  "daily_signal_count": 10,
   "last_daily_report": "2026-11-24",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
