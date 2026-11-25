@@ -1,7 +1,5 @@
 {
-  "frozen_pairs": {
-    "CADJPY=X": "2026-11-25T07:45:00+00:00"
-  },
+  "frozen_pairs": {},
   "open_trades": [
     {
       "id": "cf9860ce",
