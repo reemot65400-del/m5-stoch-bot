@@ -1,39 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "4711a244",
-      "symbol": "AUDUSD=X",
-      "type": "PUT",
-      "entry_price": 0.6585879921913147,
-      "entry_time": "2026-11-25T13:15:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "2aa12ebb",
-      "symbol": "EURAUD=X",
-      "type": "CALL",
-      "entry_price": 1.662019968032837,
-      "entry_time": "2026-11-25T13:15:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "e5af62a6",
-      "symbol": "GBPAUD=X",
-      "type": "CALL",
-      "entry_price": 1.9848099946975708,
-      "entry_time": "2026-11-25T13:15:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "b72715af",
-      "symbol": "AUDNZD=X",
-      "type": "PUT",
-      "entry_price": 1.2052700519561768,
-      "entry_time": "2026-11-25T13:15:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2036,6 +2003,50 @@
       "exit_time": "2026-11-25T07:45:00+00:00",
       "win": true,
       "pips": 0.4
+    },
+    {
+      "id": "4711a244",
+      "symbol": "AUDUSD=X",
+      "type": "PUT",
+      "entry_price": 0.6585879921913147,
+      "exit_price": 0.6582845449447632,
+      "entry_time": "2026-11-25T13:15:00+00:00",
+      "exit_time": "2026-11-25T13:45:00+00:00",
+      "win": true,
+      "pips": 3.03
+    },
+    {
+      "id": "2aa12ebb",
+      "symbol": "EURAUD=X",
+      "type": "CALL",
+      "entry_price": 1.662019968032837,
+      "exit_price": 1.6632699966430664,
+      "entry_time": "2026-11-25T13:15:00+00:00",
+      "exit_time": "2026-11-25T13:45:00+00:00",
+      "win": true,
+      "pips": 12.5
+    },
+    {
+      "id": "e5af62a6",
+      "symbol": "GBPAUD=X",
+      "type": "CALL",
+      "entry_price": 1.9848099946975708,
+      "exit_price": 1.9858900308609009,
+      "entry_time": "2026-11-25T13:15:00+00:00",
+      "exit_time": "2026-11-25T13:45:00+00:00",
+      "win": true,
+      "pips": 10.8
+    },
+    {
+      "id": "b72715af",
+      "symbol": "AUDNZD=X",
+      "type": "PUT",
+      "entry_price": 1.2052700519561768,
+      "exit_price": 1.204990029335022,
+      "entry_time": "2026-11-25T13:15:00+00:00",
+      "exit_time": "2026-11-25T13:45:00+00:00",
+      "win": true,
+      "pips": 2.8
     }
   ],
   "daily_counter_date": "2026-11-25",
