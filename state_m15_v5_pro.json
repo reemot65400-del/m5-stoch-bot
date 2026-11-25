@@ -5,14 +5,6 @@
   },
   "open_trades": [
     {
-      "id": "52be834f",
-      "symbol": "AUDUSD=X",
-      "type": "PUT",
-      "entry_price": 0.6599352955818176,
-      "entry_time": "2026-11-25T16:45:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "607bf9ef",
       "symbol": "AUDUSD=X",
       "type": "PUT",
@@ -2086,6 +2078,17 @@
       "exit_time": "2026-11-25T15:15:00+00:00",
       "win": true,
       "pips": 2.0
+    },
+    {
+      "id": "52be834f",
+      "symbol": "AUDUSD=X",
+      "type": "PUT",
+      "entry_price": 0.6599352955818176,
+      "exit_price": 0.6612882018089294,
+      "entry_time": "2026-11-25T16:45:00+00:00",
+      "exit_time": "2026-11-25T17:15:00+00:00",
+      "win": false,
+      "pips": 13.53
     }
   ],
   "daily_counter_date": "2026-11-25",
