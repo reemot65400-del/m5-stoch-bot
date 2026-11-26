@@ -1,6 +1,7 @@
 {
   "frozen_pairs": {
-    "EURCHF=X": "2026-11-26T07:45:00+00:00"
+    "EURCHF=X": "2026-11-26T08:00:00+00:00",
+    "GBPCHF=X": "2026-11-26T08:00:00+00:00"
   },
   "open_trades": [
     {
@@ -9,6 +10,22 @@
       "type": "PUT",
       "entry_price": 0.9126999974250793,
       "entry_time": "2026-11-26T07:15:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "13fc4f7d",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9132599830627441,
+      "entry_time": "2026-11-26T07:30:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "06651cab",
+      "symbol": "GBPCHF=X",
+      "type": "PUT",
+      "entry_price": 1.0909199714660645,
+      "entry_time": "2026-11-26T07:30:00+00:00",
       "signal_sent": true
     }
   ],
@@ -2127,7 +2144,7 @@
     }
   ],
   "daily_counter_date": "2026-11-26",
-  "daily_signal_count": 1,
+  "daily_signal_count": 3,
   "last_daily_report": "2026-11-25",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
