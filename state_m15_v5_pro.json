@@ -7,22 +7,6 @@
   },
   "open_trades": [
     {
-      "id": "13fc4f7d",
-      "symbol": "EURCHF=X",
-      "type": "PUT",
-      "entry_price": 0.9132599830627441,
-      "entry_time": "2026-11-26T07:30:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "06651cab",
-      "symbol": "GBPCHF=X",
-      "type": "PUT",
-      "entry_price": 1.0909199714660645,
-      "entry_time": "2026-11-26T07:30:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "690d02d1",
       "symbol": "USDCHF=X",
       "type": "PUT",
@@ -2178,6 +2162,28 @@
       "exit_time": "2026-11-26T07:45:00+00:00",
       "win": false,
       "pips": 5.6
+    },
+    {
+      "id": "13fc4f7d",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9132599830627441,
+      "exit_price": 0.9138799905776978,
+      "entry_time": "2026-11-26T07:30:00+00:00",
+      "exit_time": "2026-11-26T08:00:00+00:00",
+      "win": false,
+      "pips": 6.2
+    },
+    {
+      "id": "06651cab",
+      "symbol": "GBPCHF=X",
+      "type": "PUT",
+      "entry_price": 1.0909199714660645,
+      "exit_price": 1.0913399457931519,
+      "entry_time": "2026-11-26T07:30:00+00:00",
+      "exit_time": "2026-11-26T08:00:00+00:00",
+      "win": false,
+      "pips": 4.2
     }
   ],
   "daily_counter_date": "2026-11-26",
