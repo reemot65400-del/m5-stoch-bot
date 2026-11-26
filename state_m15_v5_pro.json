@@ -1,39 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "690d02d1",
-      "symbol": "USDCHF=X",
-      "type": "PUT",
-      "entry_price": 0.8328199982643127,
-      "entry_time": "2026-11-26T07:45:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "56920e02",
-      "symbol": "EURCHF=X",
-      "type": "PUT",
-      "entry_price": 0.9138799905776978,
-      "entry_time": "2026-11-26T07:45:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "0e61f105",
-      "symbol": "GBPCHF=X",
-      "type": "PUT",
-      "entry_price": 1.0913399457931519,
-      "entry_time": "2026-11-26T07:45:00+00:00",
-      "signal_sent": true
-    },
-    {
-      "id": "1b138f10",
-      "symbol": "CHFJPY=X",
-      "type": "CALL",
-      "entry_price": 191.08799743652344,
-      "entry_time": "2026-11-26T07:45:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2179,6 +2146,50 @@
       "exit_time": "2026-11-26T08:00:00+00:00",
       "win": false,
       "pips": 4.2
+    },
+    {
+      "id": "690d02d1",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_price": 0.8328199982643127,
+      "exit_price": 0.8325899839401245,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "exit_time": "2026-11-26T08:15:00+00:00",
+      "win": true,
+      "pips": 2.3
+    },
+    {
+      "id": "56920e02",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9138799905776978,
+      "exit_price": 0.913640022277832,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "exit_time": "2026-11-26T08:15:00+00:00",
+      "win": true,
+      "pips": 2.4
+    },
+    {
+      "id": "0e61f105",
+      "symbol": "GBPCHF=X",
+      "type": "PUT",
+      "entry_price": 1.0913399457931519,
+      "exit_price": 1.0911600589752197,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "exit_time": "2026-11-26T08:15:00+00:00",
+      "win": true,
+      "pips": 1.8
+    },
+    {
+      "id": "1b138f10",
+      "symbol": "CHFJPY=X",
+      "type": "CALL",
+      "entry_price": 191.08799743652344,
+      "exit_price": 191.16700744628906,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "exit_time": "2026-11-26T08:15:00+00:00",
+      "win": true,
+      "pips": 7.9
     }
   ],
   "daily_counter_date": "2026-11-26",
