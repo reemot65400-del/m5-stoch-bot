@@ -1,6 +1,26 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "USDCAD=X": "2026-11-26T15:30:00+00:00",
+    "CADJPY=X": "2026-11-26T15:30:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "9609c39f",
+      "symbol": "USDCAD=X",
+      "type": "PUT",
+      "entry_price": 1.4244799613952637,
+      "entry_time": "2026-11-26T15:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "e1714df1",
+      "symbol": "CADJPY=X",
+      "type": "CALL",
+      "entry_price": 111.77999877929688,
+      "entry_time": "2026-11-26T15:00:00+00:00",
+      "signal_sent": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2215,7 +2235,7 @@
     }
   ],
   "daily_counter_date": "2026-11-26",
-  "daily_signal_count": 9,
+  "daily_signal_count": 11,
   "last_daily_report": "2026-11-25",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
