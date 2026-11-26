@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "c9abbcf2",
-      "symbol": "GBPCAD=X",
-      "type": "PUT",
-      "entry_price": 1.8660099506378174,
-      "entry_time": "2026-11-26T10:15:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2199,6 +2190,17 @@
       "exit_time": "2026-11-26T08:15:00+00:00",
       "win": true,
       "pips": 7.9
+    },
+    {
+      "id": "c9abbcf2",
+      "symbol": "GBPCAD=X",
+      "type": "PUT",
+      "entry_price": 1.8660099506378174,
+      "exit_price": 1.8656599521636963,
+      "entry_time": "2026-11-26T10:15:00+00:00",
+      "exit_time": "2026-11-26T10:45:00+00:00",
+      "win": true,
+      "pips": 3.5
     }
   ],
   "daily_counter_date": "2026-11-26",
