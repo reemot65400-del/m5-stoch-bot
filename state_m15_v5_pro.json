@@ -1,7 +1,9 @@
 {
   "frozen_pairs": {
-    "EURCHF=X": "2026-11-26T08:00:00+00:00",
-    "GBPCHF=X": "2026-11-26T08:00:00+00:00"
+    "USDCHF=X": "2026-11-26T08:15:00+00:00",
+    "EURCHF=X": "2026-11-26T08:15:00+00:00",
+    "GBPCHF=X": "2026-11-26T08:15:00+00:00",
+    "CHFJPY=X": "2026-11-26T08:15:00+00:00"
   },
   "open_trades": [
     {
@@ -18,6 +20,38 @@
       "type": "PUT",
       "entry_price": 1.0909199714660645,
       "entry_time": "2026-11-26T07:30:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "690d02d1",
+      "symbol": "USDCHF=X",
+      "type": "PUT",
+      "entry_price": 0.8328199982643127,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "56920e02",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9138799905776978,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "0e61f105",
+      "symbol": "GBPCHF=X",
+      "type": "PUT",
+      "entry_price": 1.0913399457931519,
+      "entry_time": "2026-11-26T07:45:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "1b138f10",
+      "symbol": "CHFJPY=X",
+      "type": "CALL",
+      "entry_price": 191.08799743652344,
+      "entry_time": "2026-11-26T07:45:00+00:00",
       "signal_sent": true
     }
   ],
@@ -2147,7 +2181,7 @@
     }
   ],
   "daily_counter_date": "2026-11-26",
-  "daily_signal_count": 3,
+  "daily_signal_count": 7,
   "last_daily_report": "2026-11-25",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
