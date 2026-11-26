@@ -5,14 +5,6 @@
   },
   "open_trades": [
     {
-      "id": "be004fe5",
-      "symbol": "EURCHF=X",
-      "type": "PUT",
-      "entry_price": 0.9126999974250793,
-      "entry_time": "2026-11-26T07:15:00+00:00",
-      "signal_sent": true
-    },
-    {
       "id": "13fc4f7d",
       "symbol": "EURCHF=X",
       "type": "PUT",
@@ -2141,6 +2133,17 @@
       "exit_time": "2026-11-25T21:30:00+00:00",
       "win": true,
       "pips": 2.1
+    },
+    {
+      "id": "be004fe5",
+      "symbol": "EURCHF=X",
+      "type": "PUT",
+      "entry_price": 0.9126999974250793,
+      "exit_price": 0.9132599830627441,
+      "entry_time": "2026-11-26T07:15:00+00:00",
+      "exit_time": "2026-11-26T07:45:00+00:00",
+      "win": false,
+      "pips": 5.6
     }
   ],
   "daily_counter_date": "2026-11-26",
