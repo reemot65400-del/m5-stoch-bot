@@ -1,6 +1,26 @@
 {
-  "frozen_pairs": {},
-  "open_trades": [],
+  "frozen_pairs": {
+    "GBPUSD=X": "2026-11-27T13:30:00+00:00",
+    "AUDUSD=X": "2026-11-27T13:30:00+00:00"
+  },
+  "open_trades": [
+    {
+      "id": "342572be",
+      "symbol": "GBPUSD=X",
+      "type": "CALL",
+      "entry_price": 1.3116475343704224,
+      "entry_time": "2026-11-27T13:00:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "83569e11",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.6666666865348816,
+      "entry_time": "2026-11-27T13:00:00+00:00",
+      "signal_sent": true
+    }
+  ],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2259,7 +2279,7 @@
     }
   ],
   "daily_counter_date": "2026-11-27",
-  "daily_signal_count": 2,
+  "daily_signal_count": 4,
   "last_daily_report": "2026-11-26",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
