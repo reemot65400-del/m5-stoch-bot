@@ -1,8 +1,7 @@
 {
   "frozen_pairs": {
-    "EURAUD=X": "2026-11-27T15:00:00+00:00",
-    "GBPAUD=X": "2026-11-27T15:00:00+00:00",
-    "AUDNZD=X": "2026-11-27T15:00:00+00:00"
+    "EURAUD=X": "2026-11-27T15:15:00+00:00",
+    "GBPAUD=X": "2026-11-27T15:15:00+00:00"
   },
   "open_trades": [
     {
@@ -27,6 +26,22 @@
       "type": "CALL",
       "entry_price": 1.214609980583191,
       "entry_time": "2026-11-27T14:30:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "cf7c6750",
+      "symbol": "EURAUD=X",
+      "type": "PUT",
+      "entry_price": 1.6472500562667847,
+      "entry_time": "2026-11-27T14:45:00+00:00",
+      "signal_sent": true
+    },
+    {
+      "id": "f20ea34d",
+      "symbol": "GBPAUD=X",
+      "type": "PUT",
+      "entry_price": 1.972730040550232,
+      "entry_time": "2026-11-27T14:45:00+00:00",
       "signal_sent": true
     }
   ],
@@ -2321,7 +2336,7 @@
     }
   ],
   "daily_counter_date": "2026-11-27",
-  "daily_signal_count": 8,
+  "daily_signal_count": 10,
   "last_daily_report": "2026-11-26",
   "last_weekly_report": "2026-W44",
   "last_monthly_report": ""
