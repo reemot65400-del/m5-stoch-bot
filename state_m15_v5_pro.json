@@ -1,15 +1,6 @@
 {
   "frozen_pairs": {},
-  "open_trades": [
-    {
-      "id": "34d02e9e",
-      "symbol": "AUDUSD=X",
-      "type": "CALL",
-      "entry_price": 0.6657789945602417,
-      "entry_time": "2026-11-27T13:15:00+00:00",
-      "signal_sent": true
-    }
-  ],
+  "open_trades": [],
   "trade_history": [
     {
       "id": "c186d25b",
@@ -2287,6 +2278,17 @@
       "exit_time": "2026-11-27T13:30:00+00:00",
       "win": false,
       "pips": 8.88
+    },
+    {
+      "id": "34d02e9e",
+      "symbol": "AUDUSD=X",
+      "type": "CALL",
+      "entry_price": 0.6657789945602417,
+      "exit_price": 0.6658676266670227,
+      "entry_time": "2026-11-27T13:15:00+00:00",
+      "exit_time": "2026-11-27T13:45:00+00:00",
+      "win": true,
+      "pips": 0.89
     }
   ],
   "daily_counter_date": "2026-11-27",
